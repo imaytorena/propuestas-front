@@ -1,6 +1,32 @@
 # Svelte + TS + Vite
 
+## Docker
+
+This project includes a Docker setup that attaches to an external Docker network named `qci`. The frontend is served using Vite's preview server inside the container (no Nginx).
+
+- Network: `qci` (must exist: create it once with `docker network create qci`)
+- Frontend image: `qci-front`
+- Exposed port: `5173` (mapped to container port `5173`)
+- API base (optional): the app can target `/api` and you can wire it in your backend or proxy layer as needed.
+
+### Commands
+
+- Build and run:
+  - `docker network create qci` (only once if it does not exist)
+  - `docker compose up --build`
+- Open: http://localhost:5173
+- API esperado: http://localhost:3000 (endpoint /ideas para listado y /ideas/:id para detalle). Puedes cambiar el destino con la variable VITE_API_BASE.
+
 This template should help get you started developing with Svelte and TypeScript in Vite.
+
+## Rutas (page.js)
+
+Se añadieron rutas de SPA con page.js:
+- /ideas
+- /ideas/:ideaId
+- /ideas/:ideaId/editar
+
+Navega usando los enlaces del encabezado. También puedes entrar directamente a las rutas; Vite dev/preview aplica fallback a index.html.
 
 ## Recommended IDE Setup
 

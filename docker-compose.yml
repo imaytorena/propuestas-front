@@ -1,0 +1,19 @@
+name: qci
+networks:
+  qci:
+services:
+  qci-web:
+    #Comentar dependiendo del sistema operativo
+    platform: linux/amd64
+    container_name: qci-front
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - "5173:5173"
+    networks:
+      - qci
+    environment:
+      - VITE_API_BASE=${VITE_API_BASE}

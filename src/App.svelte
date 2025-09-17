@@ -1,37 +1,48 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
+  import { initRouter } from './router'
+  import RouteView from './lib/RouteView.svelte'
+  import { goto } from './utils/nav'
   import svelteLogo from './assets/svelte.svg'
   import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+
+  onMount(() => {
+    initRouter()
+  })
 </script>
 
 <main>
-  <div>
-    <a href="https://vite.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>Vite + Svelte</h1>
+  <header>
+    <div>
+      <a href="https://vite.dev" target="_blank" rel="noreferrer">
+        <img src={viteLogo} class="logo" alt="Vite Logo" />
+      </a>
+      <a href="https://svelte.dev" target="_blank" rel="noreferrer">
+        <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
+      </a>
+    </div>
+    <nav>
+      <a href="/ideas" onclick={goto}>Ideas</a>
+      <a href="/ideas/1" onclick={goto}>Detalle ejemplo</a>
+      <a href="/ideas/1/editar" onclick={goto}>Editar ejemplo</a>
+    </nav>
+  </header>
 
-  <div class="card">
-    <Counter />
-  </div>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
+  <section class="card">
+    <RouteView />
+  </section>
 </main>
 
 <style>
+  header nav {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
   .logo {
-    height: 6em;
-    padding: 1.5em;
+    height: 3.5em;
+    padding: 0.5em 1em;
     will-change: filter;
     transition: filter 300ms;
   }
