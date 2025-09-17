@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { goto } from '../utils/nav'
+  import { goto } from '../../utils/nav'
 
   type Idea = {
     id: number | string

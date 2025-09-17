@@ -1,7 +1,8 @@
 <script lang="ts">
     import {onMount} from 'svelte'
-    import {route} from '../router'
-    import {goto} from '../utils/nav'
+    import {route} from '../../router'
+    import {goto} from '../../utils/nav'
+    import page from "page";
 
     let ideaId: string = ''
     ideaId = $route.params.ideaId
@@ -43,6 +44,8 @@
     {#if idea.description}
         <p>{idea.description}</p>
     {/if}
-    <p><a href={`/ideas/${ideaId}/editar`} onclick={goto}>Editar</a></p>
+    <button class="btn btn-primary" onclick={() => {page.show(`/ideas/${ideaId}/editar`)}}>
+        Editar
+    </button>
     <p><a href="/ideas" onclick={goto}>Volver a la lista</a></p>
 {/if}
