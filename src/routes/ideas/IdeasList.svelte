@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { goto } from '../../utils/nav'
+  import axios from 'axios'
+  import api from "../../utils/api";
 
   type Idea = {
     id: number | string
@@ -18,12 +20,7 @@
     loading = true
     error = null
     try {
-      const res = await fetch(`${API_BASE}/ideas`)
-      if (!res.ok) {
-        // noinspection ExceptionCaughtLocallyJS
-        throw new Error(`Error ${res.status}`)
-      }
-      const data = await res.json()
+      const { data } = await api.get(`/ideas`)
       // Allow either array of items or wrapped payload like {items: []}
       ideas = Array.isArray(data) ? data : (data.items ?? data.ideas ?? [])
     } catch (e: any) {

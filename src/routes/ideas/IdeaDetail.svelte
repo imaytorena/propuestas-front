@@ -3,6 +3,7 @@
     import {route} from '../../router'
     import {goto} from '../../utils/nav'
     import page from "page";
+    import api from "../../utils/api";
 
     let ideaId: string = ''
     ideaId = $route.params.ideaId
@@ -17,12 +18,8 @@
         loading = true
         error = null
         try {
-            const res = await fetch(`${API_BASE}/ideas/${ideaId}`)
-            if (!res.ok) {
-                // noinspection ExceptionCaughtLocallyJS
-                throw new Error(`Error ${res.status}`)
-            }
-            idea = await res.json()
+            const { data } = await api.get(`/ideas/${ideaId}`)
+            idea = data
         } catch (e: any) {
             error = e?.message ?? 'Error cargando idea'
         } finally {

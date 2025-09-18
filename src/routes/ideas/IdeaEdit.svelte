@@ -2,6 +2,7 @@
     import {onMount} from 'svelte'
     import {route} from '../../router'
     import {goto} from '../../utils/nav'
+    import api from "../../utils/api";
 
     let ideaId: string = ''
     $: ideaId = $route.params.ideaId
@@ -22,10 +23,7 @@
         loading = true
         error = null
         try {
-            const res = await fetch(`${API_BASE}/ideas/${ideaId}`)
-            if (!res.ok) throw new Error(`Error ${res.status}`)
-            const idea = await res.json()
-            title = idea?.title ?? ''
+            const { data: idea } = await api.get(`/ideas/${ideaId}`)
             contenido = idea?.contenido ?? ''
             loaded = true
         } catch (e: any) {
@@ -45,12 +43,7 @@
         }
         saving = true
         try {
-            const res = await fetch(`${API_BASE}/ideas/${ideaId}`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({title, contenido})
-            })
-            if (!res.ok) throw new Error(`Error ${res.status}`)
+            await api.put(`/ideas/${ideaId}`, {title, contenido})
             // Volver al detalle
             const href = `/ideas/${ideaId}`
             // programmatic navigation with page.js helper

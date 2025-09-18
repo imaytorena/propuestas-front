@@ -1,8 +1,8 @@
 <script>
     // Obtener el año actual para el copyright
-    import {IdeaRoutes} from "../../routes/ideas/routes.js";
-    import {route} from '../../router'
-    import {UsuarioRoutes} from "../../routes/usuario/routes.js";
+    import {IdeaRoutes} from "../../../routes/ideas/routes.ts";
+    import {route} from '../../../router.js'
+    import {UsuarioRoutes} from "../../../routes/usuario/routes.ts";
 
     const currentYear = new Date().getFullYear();
 
@@ -25,7 +25,7 @@
             <div class="space-y-4">
                 <h4 class="text-lg font-semibold">Enlaces Rápidos</h4>
                 <ul class="space-y-2 text-gray-600">
-                    <li><a href="/" class="link hover:underline transition-colors">Inicio</a></li>
+                    <li><a href="/public" class="link hover:underline transition-colors">Inicio</a></li>
                     <li><a href="/usuario"
                            class="link hover:underline transition-colors"
                            class:active={UsuarioRoutes.includes($route.name)}

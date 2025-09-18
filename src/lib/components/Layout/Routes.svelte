@@ -1,7 +1,7 @@
 <script lang="ts">
-    import {route} from '../../router'
+    import {route} from '../../../router'
     import {getContext} from 'svelte';
-    import {IdeaRoutes} from "../../routes/ideas/routes";
+    import {IdeaRoutes} from "../../../routes/ideas/routes";
 
     const session = getContext('session');
     const currentRoute = $derived($route.name);
@@ -17,7 +17,7 @@
 <!--<div>-->
 <li id="inicio" class="snap-start  flex justify-center items-center">
     <a
-            href="/"
+            href="/public"
             class="btn-link no-underline"
             class:active={currentRoute === 'inicio'}>
         <span class="hidden md:block">Inicio</span>
