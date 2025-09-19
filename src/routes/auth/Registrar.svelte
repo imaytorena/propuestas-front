@@ -1,5 +1,5 @@
 <script lang="ts">
-    import toast from 'svelte-french-toast';
+    import toast from '../../lib/toast';
 
     type FormData = { name: string; email: string; password: string; confirm: string };
     let form: FormData = { name: '', email: '', password: '', confirm: '' };

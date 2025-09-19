@@ -1,6 +1,6 @@
 <script lang="ts">
     import { route } from '../../router';
-    import toast from 'svelte-french-toast';
+    import toast from '../../lib/toast';
 
     type FormData = { email: string; password: string };
     let form: FormData = { email: '', password: '' };

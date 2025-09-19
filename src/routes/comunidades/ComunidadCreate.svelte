@@ -2,7 +2,7 @@
   import page from 'page'
   import { goto } from '../../utils/nav'
   import api from '../../utils/api'
-  import toast from 'svelte-french-toast'
+  import toast from '../../lib/toast'
 
   // Form state
   let nombre: string = ''

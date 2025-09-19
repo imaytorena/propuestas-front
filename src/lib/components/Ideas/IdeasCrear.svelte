@@ -3,7 +3,7 @@
     import './select.css'
     import api from "../../../utils/api";
     import {onMount} from 'svelte';
-    import {toast} from "svelte-french-toast";
+    import toast from "../../toast";
 
     type ComunidadValue = { nombre: string; municipio?: string; lat?: number; lon?: number; lng?: number };
     type ComunidadOption = { id: number; label: string; value: ComunidadValue };

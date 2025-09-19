@@ -1,7 +1,7 @@
 <script lang="ts">
     import axios from 'axios';
     import api from "../../../utils/api";
-    import {toast} from "svelte-french-toast";
+    import toast from "../../toast";
 
     const {idea} = $props();
     let editing: boolean = $state(false);

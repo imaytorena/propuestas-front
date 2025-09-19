@@ -10,7 +10,7 @@
     import {PropuestaRoutes} from './routes/propuestas/routes';
     import ComunidadesRouter from './routes/comunidades/ComunidadesRouter.svelte';
     import { CommunitiesRoutes } from './routes/comunidades/routes';
-    import { Toaster } from 'svelte-french-toast';
+    import { SvelteToast } from '@zerodevx/svelte-toast';
     import Login from './routes/auth/Login.svelte';
     import Registrar from './routes/auth/Registrar.svelte';
     import Participacion from './routes/Participacion.svelte';
@@ -22,7 +22,7 @@
     })
 </script>
 
-<Toaster position="top-center" richColors/>
+<SvelteToast position="top-center" />
 <MainLayout>
     <section class="container mx-auto w-full flex-grow px-4 font-sans">
         {#if (IdeaRoutes.includes($route.name))}

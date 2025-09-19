@@ -5,7 +5,7 @@
     import VerMas from "../lib/components/VerMas.svelte";
     import IdeasCrear from "../lib/components/Ideas/IdeasCrear.svelte";
     import api from "../utils/api";
-    import {toast} from 'svelte-french-toast';
+    import toast from '../lib/toast';
 
     // Form state
     let loading = $state(true)
