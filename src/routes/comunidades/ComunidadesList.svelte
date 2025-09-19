@@ -1,91 +1,99 @@
 <script lang="ts">
     import {goto} from '../../utils/nav'
-    import api from "../../utils/api";
+    import api from '../../utils/api'
 
-    type Idea = {
+    type Comunidad = {
         id: number | string
-        contenido?: string
-        comunidad?: {
-            nombre: string
-        }
+        nombre?: string
+        descripcion?: string
     }
 
-    let ideas: Idea[] = $state([])
+    let comunidades: Comunidad[] = $state([])
     let loading = $state(true)
     let error: string | null = $state(null)
     let query: string = $state('')
 
-    // Paginación (cliente)
+    // Paginación (servidor)
     let page = $state(1)
     let pageSize = $state(9)
+    let total = $state(0)
+    let pageCount = $state(1)
 
-    async function loadIdeas() {
+    async function loadComunidades() {
         loading = true
         error = null
         try {
-            const {data} = await api.get(`/ideas`)
-            // Permitir array directo o envuelto {items: []} / {ideas: []}
-            ideas = data.data
+            const {data} = await api.get(`/comunidades/paginadas`, {
+                params: {page, limit: pageSize}
+            })
+            comunidades = data.data ?? []
+            total = data.meta?.total ?? comunidades.length
+            pageCount = data.meta?.pageCount ?? Math.max(1, Math.ceil(total / pageSize))
         } catch (e: any) {
-            error = e?.message ?? 'Error cargando ideas'
+            error = e?.message ?? 'Error cargando comunidades'
         } finally {
             loading = false
         }
     }
 
-    const filtered = $derived((ideas ?? []).filter((i) => {
+    const filtered = $derived((comunidades ?? []).filter((c) => {
         if (!query) return true
         const q = query.toLowerCase().trim()
         return (
-            (i.contenido ?? '').toLowerCase().includes(q) ||
-            (i.comunidad?.nombre ?? '').toLowerCase().includes(q)
+            (c.nombre ?? '').toLowerCase().includes(q) ||
+            (c.descripcion ?? '').toLowerCase().includes(q)
         )
     }))
 
-    // Derivados de paginación
-    const totalItems = $derived(filtered.length)
-    const totalPages = $derived(Math.max(1, Math.ceil(totalItems / pageSize)))
-    const startIndex = $derived((page - 1) * pageSize)
-    const endIndex = $derived(Math.min(startIndex + pageSize, totalItems))
-    const pageItems = $derived(filtered.slice(startIndex, startIndex + pageSize))
+    // Totales basados en la meta de la API
+    const totalItems = $derived(total)
+    const totalPages = $derived(Math.max(1, pageCount))
+    const startIndex = $derived((totalItems === 0) ? 0 : (page - 1) * pageSize)
+    const endIndex = $derived(Math.min(page * pageSize, totalItems))
+    const pageItems = $derived(filtered)
 
-    // Mantener página dentro de rangos cuando cambie el filtro o el tamaño de página
+    // Cambiar página dentro de los límites disponibles
     $effect(() => {
         if (page > totalPages) page = totalPages
         if (page < 1) page = 1
     })
 
-    // Reiniciar a la primera página cuando cambie la búsqueda
+    // Resetear a la primera página cuando cambia la búsqueda
     $effect(() => {
-        // Solo para usar la dependencia: query
         void query
         page = 1
     })
 
+    // Cargar datos iniciales y cuando cambie la página o el tamaño de página
     $effect.pre(() => {
-        // Ejecutar una vez al montar
-        loadIdeas()
+        loadComunidades()
+    })
+    $effect(() => {
+        void page
+        void pageSize
+        loadComunidades()
     })
 </script>
 
-<section aria-labelledby="ideas-heading" class="mx-auto max-w-6xl px-4 py-4 sm:py-6">
+<section aria-labelledby="comunidades-heading" class="mx-auto max-w-6xl px-4 py-4 sm:py-6">
     <header class="mb-4 flex flex-col items-start justify-between gap-3 sm:mb-6 sm:flex-row sm:items-center">
-        <h1 id="ideas-heading" class="text-2xl font-semibold tracking-tight">Ideas</h1>
+        <h1 id="comunidades-heading" class="text-2xl font-semibold tracking-tight">Comunidades</h1>
 
         <div class="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
             <div class="join w-full sm:w-80">
                 <input
                         class="input input-bordered join-item w-full"
                         type="search"
-                        placeholder="Buscar ideas..."
-                        aria-label="Buscar ideas"
+                        placeholder="Buscar comunidades..."
+                        aria-label="Buscar comunidades"
                         bind:value={query}
                 />
                 {#if query}
                     <button class="btn join-item" aria-label="Limpiar búsqueda" onclick={() => (query = '')}>✕</button>
                 {/if}
             </div>
-            <button class="btn btn-ghost" onclick={loadIdeas} aria-label="Recargar lista">Recargar</button>
+            <a class="btn btn-primary text-white" href="/comunidades/crear" onclick={goto}>Nueva comunidad</a>
+            <button class="btn btn-ghost" onclick={loadComunidades} aria-label="Recargar lista">Recargar</button>
         </div>
     </header>
 
@@ -106,13 +114,13 @@
         <div role="alert" class="alert alert-error">
             <span>{error}</span>
             <div class="ml-auto">
-                <button class="btn btn-sm" onclick={loadIdeas}>Reintentar</button>
+                <button class="btn btn-sm" onclick={loadComunidades}>Reintentar</button>
             </div>
         </div>
-    {:else if (ideas?.length ?? 0) === 0}
+    {:else if (comunidades?.length ?? 0) === 0}
         <div class="rounded-box border border-base-300 p-8 text-center">
-            <p class="mb-2 text-lg">Aún no hay ideas.</p>
-            <p class="text-base-content/70">Sé el primero en compartir una.</p>
+            <p class="mb-2 text-lg">Aún no hay comunidades.</p>
+            <p class="text-base-content/70">Crea la primera.</p>
         </div>
     {:else if filtered.length === 0}
         <div class="rounded-box border border-base-300 p-8 text-center">
@@ -123,20 +131,20 @@
         <p class="mb-3 text-sm text-base-content/70">Mostrando {totalItems === 0 ? 0 : startIndex + 1}–{endIndex}
             de {totalItems}</p>
         <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {#each pageItems as idea}
+            {#each pageItems as c}
                 <li>
                     <article class="card bg-base-100 shadow-sm h-full">
                         <div class="card-body flex flex-col">
-                            <h2 class="card-contenido text-base">{idea.contenido ?? `Idea ${idea.id}`}</h2>
-                            {#if idea.comunidad}
-                                <p class="line-clamp-3 text-sm text-base-content/80">{idea.comunidad.nombre}</p>
+                            <h2 class="card-title text-base">{c.nombre ?? `Comunidad ${c.id}`}</h2>
+                            {#if c.descripcion}
+                                <p class="line-clamp-3 text-sm text-base-content/80">{c.descripcion}</p>
                             {/if}
                             <div class="card-actions mt-auto justify-end">
                                 <a
                                         class="btn btn-primary btn-sm text-white"
-                                        href={`/ideas/${idea.id}`}
+                                        href={`/comunidades/${c.id}`}
                                         onclick={goto}
-                                        aria-label={`Ver detalles de ${idea.contenido ?? `Idea ${idea.id}`}`}
+                                        aria-label={`Ver detalles de ${c.nombre ?? `Comunidad ${c.id}`}`}
                                 >
                                     Ver detalle
                                 </a>
@@ -152,15 +160,16 @@
                 <button class="btn btn-sm join-item" aria-label="Página anterior" disabled={page === 1}
                         onclick={() => (page = Math.max(1, page - 1))}>«
                 </button>
-                {#each Array(totalPages) as _, i}
-                    <button
-                            class="btn btn-sm join-item"
-                            class:btn-active={page === i + 1}
-                            aria-current={page === i + 1 ? 'page' : undefined}
-                            aria-label={`Ir a la página ${i + 1}`}
-                            onclick={() => (page = i + 1)}
-                    >{i + 1}</button>
-                {/each}
+                <button class="btn btn-sm join-item" disabled>...</button>
+                <!--{#each Array(totalPages).slice( page - 1, Math.max(1, page + 3)) as _, i}-->
+                <!--    <button-->
+                <!--            class="btn btn-sm join-item"-->
+                <!--            class:btn-active={page === i + 1}-->
+                <!--            aria-current={page === i + 1 ? 'page' : undefined}-->
+                <!--            aria-label={`Ir a la página ${i + 1}`}-->
+                <!--            onclick={() => (page = i + 1)}-->
+                <!--    >{i + 1}</button>-->
+                <!--{/each}-->
                 <button class="btn btn-sm join-item" aria-label="Siguiente página" disabled={page === totalPages}
                         onclick={() => (page = Math.min(totalPages, page + 1))}>»
                 </button>

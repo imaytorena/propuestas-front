@@ -40,8 +40,8 @@
     async function loadIdeas() {
         error = null
         try {
-            const {data} = await api.get(`/ideas`)
-            ideas = data
+            const {data} = await api.get(`/ideas?limit=5`)
+            ideas = data.data
         } catch (e: any) {
             error = e?.message ?? 'Error cargando idea'
             throw e;

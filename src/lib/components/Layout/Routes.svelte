@@ -17,7 +17,7 @@
 <!--<div>-->
 <li id="inicio" class="snap-start  flex justify-center items-center">
     <a
-            href="/public"
+            href="/"
             class="btn-link no-underline"
             class:active={currentRoute === 'inicio'}>
         <span class="hidden md:block">Inicio</span>
@@ -60,7 +60,7 @@
         <a
                 href="/auth/login"
                 aria-label="Iniciar sesión"
-                class="btn-link flex items-center text-black no-underline"
+                class="btn-link flex items-center text-base-content no-underline"
         >
 
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -117,7 +117,7 @@
             <a
                     id="usuario" href="/usuario"
                     aria-label="Perfil del usuario"
-                    class="btn-link flex items-center text-black no-underline"
+                    class="btn-link flex items-center text-base-content no-underline"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="35" height="30" viewBox="0 0 24 24"
                 >

@@ -4,10 +4,10 @@
 </script>
 
 <nav class="navbar w-full z-[1001] gap-4 container text-black p-4 md:pb-4 w-full flex flex-col lg:flex-row justify-center lg:flex-grow m-auto items-center lg:justify-between">
-    <div class="flex items-center gap-2">
+    <a href="/" class="flex items-center gap-2 decoration-none">
         <img src={logo} alt="Logo" class="md:w-20 w-12"/>
-        <span class="text-[1.7rem]">ColectividApp</span>
-    </div>
+        <span class="text-base-content  text-lg md:text-3xl">ColectividApp</span>
+    </a>
     <div class="fixed bottom-8 right-8 flex flex-col items-center gap-1">
         <label class="toggle  toggle-lg text-primary">
             <input value="dim" class="theme-controller" type="checkbox"/>
@@ -23,7 +23,7 @@
         </label>
     </div>
     <div class="flex-none max-w-[70vw] md:max-w-full  md:overflow-x-hidden overflow-hidden overflow-x-scroll snap-x snap-mandatory">
-        <ul class="flex gap-6 text-lg md:text-3xl">
+        <ul class="text-base-content flex gap-6 text-lg md:text-3xl">
             <Routes/>
         </ul>
     </div>

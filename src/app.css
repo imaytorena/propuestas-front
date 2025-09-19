@@ -39,6 +39,14 @@
     --noise: 0;
 }
 
+
+/*noinspection ALL*/
+@plugin "daisyui/theme" {
+    name: "dim";
+    --color-primary: oklch(52% 0.154 150.069);
+    --color-primary-content: oklch(98% 0.001 106.423);
+}
+
 /*noinspection ALL*/
 @font-face {
     font-family: 'Delius';

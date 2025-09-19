@@ -5,29 +5,28 @@
   import { goto } from '../../utils/nav'
   import api from '../../utils/api'
 
-  let ideaId: string = ''
-  $: ideaId = $route.params.ideaId
+  let propuestaId: string = ''
+  $: propuestaId = $route.params.propuestaId
 
-  // Form state
   let title: string = ''
-  let contenido: string = ''
+  let descripcion: string = ''
   let loading = true
   let saving = false
   let error: string | null = null
   let saveError: string | null = null
   let loaded = false
 
-  async function loadIdea() {
-    if (!ideaId) return
+  async function loadPropuesta() {
+    if (!propuestaId) return
     loading = true
     error = null
     try {
-      const { data: idea } = await api.get(`/ideas/${ideaId}`)
-      title = idea?.title ?? ''
-      contenido = idea?.contenido ?? idea?.description ?? ''
+      const { data: p } = await api.get(`/propuestas/${propuestaId}`)
+      title = p?.title ?? p?.titulo ?? ''
+      descripcion = p?.description ?? p?.descripcion ?? ''
       loaded = true
     } catch (e: any) {
-      error = e?.message ?? 'Error cargando idea'
+      error = e?.message ?? 'Error cargando propuesta'
     } finally {
       loading = false
     }
@@ -35,7 +34,7 @@
 
   async function save(event: SubmitEvent & { currentTarget: EventTarget & HTMLFormElement }) {
     event.preventDefault()
-    if (!ideaId) return
+    if (!propuestaId) return
     saveError = null
     if (!title.trim()) {
       saveError = 'El título es obligatorio'
@@ -43,9 +42,8 @@
     }
     saving = true
     try {
-      await api.put(`/ideas/${ideaId}`, { title, contenido })
-      // Volver al detalle (SPA)
-      page.show(`/ideas/${ideaId}`)
+      await api.put(`/propuestas/${propuestaId}`, { title, description: descripcion })
+      page.show(`/propuestas/${propuestaId}`)
     } catch (e: any) {
       saveError = e?.message ?? 'No se pudo guardar'
     } finally {
@@ -53,10 +51,10 @@
     }
   }
 
-  onMount(loadIdea)
+  onMount(loadPropuesta)
 </script>
 
-<section aria-labelledby="edit-idea-heading" class="mx-auto max-w-3xl px-4 py-4 sm:py-6">
+<section aria-labelledby="edit-propuesta-heading" class="mx-auto max-w-3xl px-4 py-4 sm:py-6">
   {#if loading}
     <article class="card bg-base-100 shadow-sm">
       <div class="card-body animate-pulse">
@@ -69,18 +67,18 @@
     <div role="alert" class="alert alert-error">
       <span>{error}</span>
       <div class="ml-auto">
-        <button class="btn btn-sm" onclick={loadIdea}>Reintentar</button>
+        <button class="btn btn-sm" onclick={loadPropuesta}>Reintentar</button>
       </div>
     </div>
   {:else if !loaded}
     <div class="rounded-box border border-base-300 p-8 text-center">
-      <p class="mb-2 text-lg">Idea no encontrada.</p>
-      <a class="btn" href="/ideas" onclick={goto}>Volver a la lista</a>
+      <p class="mb-2 text-lg">Propuesta no encontrada.</p>
+      <a class="btn" href="/propuestas" onclick={goto}>Volver a la lista</a>
     </div>
   {:else}
     <header class="mb-4 flex items-center justify-between gap-3">
-      <h1 id="edit-idea-heading" class="text-2xl font-semibold tracking-tight">Editar idea {ideaId}</h1>
-      <a class="btn btn-ghost btn-sm" href={`/ideas/${ideaId}`} onclick={goto}>Cancelar</a>
+      <h1 id="edit-propuesta-heading" class="text-2xl font-semibold tracking-tight">Editar propuesta {propuestaId}</h1>
+      <a class="btn btn-ghost btn-sm" href={`/propuestas/${propuestaId}`} onclick={goto}>Cancelar</a>
     </header>
 
     <form class="space-y-4" onsubmit={save}>
@@ -100,15 +98,15 @@
       </div>
 
       <div class="form-control">
-        <label class="label" for="contenido">
-          <span class="label-text">Contenido</span>
+        <label class="label" for="descripcion">
+          <span class="label-text">Descripción</span>
         </label>
         <textarea
-          id="contenido"
+          id="descripcion"
           class="textarea textarea-bordered w-full"
           rows="6"
-          bind:value={contenido}
-          placeholder="Describe tu idea"
+          bind:value={descripcion}
+          placeholder="Describe tu propuesta"
           disabled={saving}
         ></textarea>
         <div class="label">
@@ -123,13 +121,13 @@
       {/if}
 
       <div class="flex items-center justify-end gap-2">
-        <a class="btn btn-ghost" href={`/ideas/${ideaId}`} onclick={goto} type="button">Cancelar</a>
+        <a class="btn btn-ghost" href={`/propuestas/${propuestaId}`} onclick={goto} type="button">Cancelar</a>
         <button class="btn btn-primary text-white" type="submit" disabled={saving}>
           {saving ? 'Guardando…' : 'Guardar'}
         </button>
       </div>
     </form>
 
-    <p class="mt-4"><a href="/ideas" onclick={goto} class="link">Volver a la lista</a></p>
+    <p class="mt-4"><a href="/propuestas" onclick={goto} class="link">Volver a la lista</a></p>
   {/if}
 </section>
