@@ -178,7 +178,7 @@
                             <div class="card-body flex flex-col gap-4 p-4">
                                 <span class="badge badge-outline badge-primary text-xs self-end">{section.title}</span>
                                 <h3 class="card-title text-lg">{item.titulo ?? item.nombre}</h3>
-                                <p class="text-sm text-base-content/70">{item.contenido}</p>
+                                <p class="text-sm text-base-content/70">{item.descripcion}</p>
                                 <div class="card-actions justify-end mt-2">
                                     <a href={"/"+section.key+"/"+item.id} class="btn btn-sm btn-primary">Ver más</a>
                                 </div>
