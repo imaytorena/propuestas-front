@@ -57,7 +57,7 @@
   {:else}
     <header class="mb-3 flex items-center justify-between gap-3">
       <h1 id="idea-heading" class="text-2xl font-semibold tracking-tight">
-        {idea.title ?? `Idea ${ideaId}`}
+        {idea.titulo ?? `Idea ${ideaId}`}
       </h1>
       <nav class="flex items-center gap-2">
         <a
