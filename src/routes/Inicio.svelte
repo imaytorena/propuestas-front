@@ -106,7 +106,9 @@
 
                     </div>
                     <div class="col-span-2 lg:col-span-1">
-                        <button class="btn btn-primary mt-4 w-full py-2 text-white" onclick={goToComunidad}>Ver comunidad</button>
+                        <button class="btn btn-primary mt-4 w-full py-2 text-white" onclick={goToComunidad}>Ver
+                            comunidad
+                        </button>
                     </div>
                 </div>
             {/if}
@@ -114,13 +116,20 @@
     </section>
     <section>
         <div class="flex w-full flex-wrap items-center justify-center gap-5">
-            {#each ['Ideas', 'Actividades', 'Propuestas', 'Comunidades'] as tab}
+            <!-- agregar 'Actividades', -->
+            {#each ['Ideas'] as tab}
                 <button
                         class="btn {selectedOption === tab
                 ? 'btn-primary btn-active text-white '
                 : 'btn-ghost text-primary'} btn-lg border-2 border-primary hover:border-primary"
                         onclick={() => switchOption(tab)}>{tab}</button
                 >
+            {/each}
+            {#each ['Propuestas', 'Comunidades'] as tab}
+                <a class="btn btn-ghost cursor-pointer text-primary border-solid border-2 border-primary hover:btn-primary hover:btn-active hover:text-white"
+                   href={"/"+tab.toLowerCase()}>
+                    {tab}
+                </a>
             {/each}
         </div>
         <!-- Ideas Section -->
