@@ -9,7 +9,7 @@
   $: ideaId = $route.params.ideaId
 
   // Form state
-  let title: string = ''
+  let titulo: string = ''
   let contenido: string = ''
   let loading = true
   let saving = false
@@ -23,7 +23,7 @@
     error = null
     try {
       const { data: idea } = await api.get(`/ideas/${ideaId}`)
-      title = idea?.title ?? ''
+      titulo = idea?.titulo ?? ''
       contenido = idea?.contenido ?? idea?.description ?? ''
       loaded = true
     } catch (e: any) {
@@ -37,13 +37,13 @@
     event.preventDefault()
     if (!ideaId) return
     saveError = null
-    if (!title.trim()) {
+    if (!titulo.trim()) {
       saveError = 'El título es obligatorio'
       return
     }
     saving = true
     try {
-      await api.put(`/ideas/${ideaId}`, { title, contenido })
+      await api.put(`/ideas/${ideaId}`, { titulo, contenido })
       // Volver al detalle (SPA)
       page.show(`/ideas/${ideaId}`)
     } catch (e: any) {
@@ -85,14 +85,14 @@
 
     <form class="space-y-4" onsubmit={save}>
       <div class="form-control">
-        <label class="label" for="title">
+        <label class="label" for="titulo">
           <span class="label-text">Título</span>
         </label>
         <input
-          id="title"
+          id="titulo"
           class="input input-bordered w-full"
           type="text"
-          bind:value={title}
+          bind:value={titulo}
           placeholder="Título"
           required
           disabled={saving}
