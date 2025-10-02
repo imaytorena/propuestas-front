@@ -127,6 +127,7 @@
     onMount(() => {
         // Restore temporal polygon if present
         try {
+            clearPoints();
             const stored = localStorage.getItem(LOCAL_KEY)
             if (stored) {
                 const parsed = JSON.parse(stored)
@@ -191,7 +192,7 @@
         try {
             // Construye el payload para el API
             const payload: any = { nombre, descripcion }
-            if (selectedTipo) payload.tipo = selectedTipo
+            if (selectedTipo) payload.categoria = selectedTipo
             // En un futuro podríamos enviar también la zona/polígono si el API lo soporta
             const {data} = await api.post(`/comunidades`, payload)
             const created = data?.data ?? data
