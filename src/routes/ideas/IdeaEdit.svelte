@@ -10,7 +10,7 @@
 
   // Form state
   let titulo: string = ''
-  let contenido: string = ''
+  let descripcion: string = ''
   let loading = true
   let saving = false
   let error: string | null = null
@@ -24,7 +24,7 @@
     try {
       const { data: idea } = await api.get(`/ideas/${ideaId}`)
       titulo = idea?.titulo ?? ''
-      contenido = idea?.contenido ?? idea?.description ?? ''
+      descripcion = idea?.description ?? ''
       loaded = true
     } catch (e: any) {
       error = e?.message ?? 'Error cargando idea'
@@ -43,7 +43,7 @@
     }
     saving = true
     try {
-      await api.put(`/ideas/${ideaId}`, { titulo, contenido })
+      await api.put(`/ideas/${ideaId}`, { titulo, descripcion })
       // Volver al detalle (SPA)
       page.show(`/ideas/${ideaId}`)
     } catch (e: any) {
@@ -100,14 +100,14 @@
       </div>
 
       <div class="form-control">
-        <label class="label" for="contenido">
-          <span class="label-text">Contenido</span>
+        <label class="label" for="descripcion">
+          <span class="label-text">Descripcion</span>
         </label>
         <textarea
-          id="contenido"
+          id="descripcion"
           class="textarea textarea-bordered w-full"
           rows="6"
-          bind:value={contenido}
+          bind:value={descripcion}
           placeholder="Describe tu idea"
           disabled={saving}
         ></textarea>

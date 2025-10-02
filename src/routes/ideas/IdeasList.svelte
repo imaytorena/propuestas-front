@@ -4,7 +4,7 @@
 
     type Idea = {
         id: number | string
-        contenido?: string
+        descripcion?: string
         comunidad?: {
             nombre: string
         }
@@ -37,7 +37,7 @@
         if (!query) return true
         const q = query.toLowerCase().trim()
         return (
-            (i.contenido ?? '').toLowerCase().includes(q) ||
+            (i.descripcion ?? '').toLowerCase().includes(q) ||
             (i.comunidad?.nombre ?? '').toLowerCase().includes(q)
         )
     }))
@@ -127,7 +127,7 @@
                 <li>
                     <article class="card bg-base-100 shadow-sm h-full">
                         <div class="card-body flex flex-col">
-                            <h2 class="card-contenido text-base">{idea.contenido ?? `Idea ${idea.id}`}</h2>
+                            <h2 class="card-descripcion text-base">{idea.descripcion ?? `Idea ${idea.id}`}</h2>
                             {#if idea.comunidad}
                                 <p class="line-clamp-3 text-sm text-base-content/80">{idea.comunidad.nombre}</p>
                             {/if}
@@ -136,7 +136,7 @@
                                         class="btn btn-primary btn-sm text-white"
                                         href={`/ideas/${idea.id}`}
                                         onclick={goto}
-                                        aria-label={`Ver detalles de ${idea.contenido ?? `Idea ${idea.id}`}`}
+                                        aria-label={`Ver detalles de ${idea.descripcion ?? `Idea ${idea.id}`}`}
                                 >
                                     Ver detalle
                                 </a>

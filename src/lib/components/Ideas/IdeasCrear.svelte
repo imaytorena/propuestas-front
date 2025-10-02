@@ -34,7 +34,7 @@
         try {
             let {data} = await api.post(`/ideas`, {
                 titulo: newIdeaTitle,
-                contenido: newIdeaText,
+                descripcion: newIdeaText,
                 comunidadId: selectedComunidad?.id
             });
             toast.push("Idea creada exitosamente");

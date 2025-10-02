@@ -40,7 +40,10 @@
         error = null
         try {
             const {data} = await api.get(`/ideas?limit=5`)
+            console.log(data)
             ideas = data.data
+            console.log(ideas)
+
         } catch (e: any) {
             error = e?.message ?? 'Error cargando idea'
             throw e;

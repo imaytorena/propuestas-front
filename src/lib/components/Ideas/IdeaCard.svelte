@@ -5,13 +5,14 @@
     import page from "page";
 
     const {idea} = $props();
+    console.log(idea);
     let editing: boolean = $state(false);
     let showingHistory: boolean = $state(false);
     let generating: boolean = $state(false);
 
     const onEdit = async () => {
 
-        await api.put(`/ideas/${idea.id}`, {contenido: idea?.contenido ?? ""});
+        await api.put(`/ideas/${idea.id}`, {descripcion: idea?.descripcion ?? ""});
         editing = false;
 
     }
@@ -51,7 +52,7 @@
 <div class="card h-full bg-base-100 shadow-xl">
     <div class="card-body">
         {#if editing}
-			<textarea class="textarea textarea-bordered mb-4 w-full" bind:value={idea.contenido}
+			<textarea class="textarea textarea-bordered mb-4 w-full" bind:value={idea.descripcion}
             ></textarea>
             <div class="card-actions justify-end">
                 <button
@@ -93,7 +94,7 @@
             <!--	</div>-->
         {:else}
             <div class="flex flex-col items-center gap-2">
-                <p class="text-center text-lg">{idea.contenido}</p>
+                <p class="text-center text-lg">{idea.descripcion}</p>
                 <p class="text-center text-md italic">{`${idea.comunidad?.nombre ? 'COMUNIDAD: ' + idea.comunidad?.nombre : ''}`}</p>
                 <div class="flex items-center justify-between text-sm text-base-content/70"></div>
                 <div>
