@@ -13,7 +13,8 @@
     import { SvelteToast } from '@zerodevx/svelte-toast';
     import Login from './routes/auth/Login.svelte';
     import Registrar from './routes/auth/Registrar.svelte';
-    import Participacion from './routes/Participacion.svelte';
+    import Participacion from './routes/participacion/Participacion.svelte';
+    import UsuarioDetalle from './routes/usuario/UsuarioDetalle.svelte';
 
     let loading = true
 
@@ -37,6 +38,8 @@
             <Registrar/>
         {:else if $route.name === 'participacion'}
             <Participacion/>
+        {:else if $route.name === 'usuario-detalle'}
+            <UsuarioDetalle/>
         {:else}
             <Inicio/>
         {/if}

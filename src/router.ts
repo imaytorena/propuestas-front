@@ -1,5 +1,7 @@
 import page from 'page'
 import {writable} from 'svelte/store'
+import { isAuthenticated } from './stores/auth'
+import toast from "./lib/toast";
 
 export type RouteName = 'inicio' | 'participacion' |
     'usuario-detalle' | 'usuario-editar' |
@@ -22,23 +24,33 @@ function setRoute(name: RouteName, ctx: any) {
     route.set({name, params: (ctx.params as Record<string, string>) ?? {}, path: ctx.path})
 }
 
-export function initRouter() {
+export async function initRouter() {
+    const { isAuthenticated } = await import('./stores/auth')
+    function requireAuth(ctx: any, next: any) {
+        if (!isAuthenticated()) {
+            const returnTo = encodeURIComponent(ctx.path + (ctx.querystring ? `?${ctx.querystring}` : ''))
+            toast.push(`<strong>No hay usuario autenticado</strong><br>
+                <a class=\"link\" href=\"/auth/login?returnTo=${returnTo}\">Iniciar sesión/Registrarse</a>`)
+        } else {
+            next()
+        }
+    }
     // Ideas
     page('/ideas', (ctx: any) => setRoute('ideas', ctx))
     page('/ideas/crear', (ctx: any) => setRoute('idea-crear', ctx))
     page('/ideas/:ideaId', (ctx: any) => setRoute('idea-detalle', ctx))
     page('/ideas/:ideaId/editar', (ctx: any) => setRoute('idea-editar', ctx))
-    // Ideas
+    // Propuestas
     page('/propuestas', (ctx: any) => setRoute('propuestas', ctx))
-    page('/propuestas/crear', (ctx: any) => setRoute('propuesta-crear', ctx))
+    page('/propuestas/crear', requireAuth, (ctx: any) => setRoute('propuesta-crear', ctx))
     page('/propuestas/:propuestaId', (ctx: any) => setRoute('propuesta-detalle', ctx))
     page('/propuestas/:propuestaId/editar', (ctx: any) => setRoute('propuesta-editar', ctx))
-    // Ideas
+    // Actividades
     page('/actividades', (ctx: any) => setRoute('actividades', ctx))
-    page('/actividades/crear', (ctx: any) => setRoute('actividad-crear', ctx))
+    page('/actividades/crear', requireAuth, (ctx: any) => setRoute('actividad-crear', ctx))
     page('/actividades/:actividadId', (ctx: any) => setRoute('actividad-detalle', ctx))
     page('/actividades/:actividadId/editar', (ctx: any) => setRoute('actividad-editar', ctx))
-    // Ideas
+    // Comunidades
     page('/comunidades', (ctx: any) => setRoute('comunidades', ctx))
     page('/comunidades/crear', (ctx: any) => setRoute('comunidad-crear', ctx))
     page('/comunidades/:comunidadId', (ctx: any) => setRoute('comunidad-detalle', ctx))

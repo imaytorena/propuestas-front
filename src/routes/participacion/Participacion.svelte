@@ -134,12 +134,11 @@
             <section class="space-y-4">
                 <div class="flex items-end justify-between gap-4">
                     <div>
-                        <h2 class="text-2xl font-semibold">{section.title}</h2>
-                        <p class="text-base-content/70">{section.description}</p>
+                        <a class="" href={section.cta?.href}>
+                            <h2 class="link link-sm text-2xl font-semibold">{section.title}</h2>
+                            <p class="text-base-content/70">{section.description}</p>
+                        </a>
                     </div>
-                    {#if section.cta}
-                        <a class="btn btn-sm btn-outline" href={section.cta.href}>{section.cta.label}</a>
-                    {/if}
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

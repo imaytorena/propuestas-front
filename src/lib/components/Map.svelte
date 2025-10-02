@@ -1,8 +1,6 @@
 <!--suppress ALL, TypeScriptUnresolvedReference -->
 <script lang="ts">
     import {onMount} from 'svelte';
-    import c from '../data/zmg-colonias.json'
-    import {tick} from 'svelte';
 
     import type {Geometry} from 'geojson';
     import type {LeafletMouseEvent, GeoJSON} from 'leaflet';

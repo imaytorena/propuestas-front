@@ -1,17 +1,17 @@
 <script lang="ts">
     import {route} from '../../../router'
-    import {getContext} from 'svelte';
     import {IdeaRoutes} from "../../../routes/ideas/routes";
+    import { session } from '../../../stores/auth'
 
-    const session = getContext('session');
     const currentRoute = $derived($route.name);
-    const showLoginOption = $derived(!!(!session && !($route.name === 'auth-login' || $route.name === 'auth-registrar')));
-    const userIsLogged = $derived(!!session);
+    const hasSession = $derived(!!$session)
+    const showLoginOption = $derived(!hasSession && !($route.name === 'auth-login' || $route.name === 'auth-registrar'));
+    const userIsLogged = $derived(hasSession);
 
-    $effect(() => {
-        console.log(showLoginOption)
-        console.log(currentRoute)
-    })
+    // $effect(() => {
+    //     console.log(showLoginOption)
+    //     console.log(currentRoute)
+    // })
 </script>
 
 <!--<div>-->

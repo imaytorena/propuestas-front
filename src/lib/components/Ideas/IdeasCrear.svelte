@@ -9,6 +9,7 @@
     type ComunidadOption = { id: number; label: string; value: ComunidadValue };
 
     let {ideas} = $props();
+    let newIdeaTitle: string = $state('');
     let newIdeaText: string = $state('');
     let selectedComunidad: ComunidadOption | null = $state(null);
     let comunidades: ComunidadOption[] = $state([]);
@@ -25,112 +26,82 @@
         return {lat, lon};
     }
 
-    function haversine(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
-        const R = 6371e3; // meters
-        const toRad = (d: number) => d * Math.PI / 180;
-        const dLat = toRad(b.lat - a.lat);
-        const dLon = toRad(b.lon - a.lon);
-        const lat1 = toRad(a.lat);
-        const lat2 = toRad(b.lat);
-        const s = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-        const c = 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
-        return R * c; // meters
-    }
-
-    async function loadComunidades(userPos?: { lat: number; lon: number }) {
-        loadingComunidades = true;
+    const onSave = async () => {
         try {
-            const {data: res}: any = await api.get(`/comunidades?limit=1200`);
+            let {data} = await api.post(`/ideas`, {
+                titulo: newIdeaTitle,
+                contenido: newIdeaText,
+                comunidadId: selectedComunidad?.id
+            });
+            toast.push("Idea creada exitosamente");
+            newIdeaTitle = '';
+            newIdeaText = '';
+            selectedComunidad = null;
+            ideas.unshift(data);
+        } catch (e) {
+            console.error('Error guardando idea', e);
+            toast.push('Error guardando idea');
+            return;
+        }
+    }
+    const onclick = () => {
+        onSave();
+    };
+
+    async function searchByNombre(filterText: string) {
+        if (filterText === '') return Promise.resolve()
+        try {
+            loadingComunidades = true;
+            const q = (filterText ?? '').trim();
+            const url = q
+                ? `/comunidades?limit=1200&nombre=${encodeURIComponent(q)}`
+                : `/comunidades?limit=1200`;
+            const {data: res}: any = await api.get(url);
             const list: any[] = res?.data ?? res?.comunidades ?? res ?? [];
-            let mapped: ComunidadOption[] = list.map((it: any) => {
+            const mapped: ComunidadOption[] = list.map((it: any) => {
                 const {lat, lon} = getLatLon(it);
                 const nombre = it?.nombre ?? it?.name ?? it?.comunidad ?? 'Comunidad';
                 const municipio = it?.municipio ?? it?.city ?? it?.municipality;
                 const label = `${nombre}${municipio ? ` (${municipio})` : ''}`;
                 return {id: it.id, label, value: {nombre, municipio, lat, lon}} as ComunidadOption;
             });
-
-            // If we have user position and items with coordinates, sort by distance and mark top 5
-            if (userPos) {
-                const withCoords = mapped.filter(o => typeof o.value.lat === 'number' && typeof o.value.lon === 'number');
-                withCoords.sort((a, b) => haversine(userPos, {
-                    lat: a.value.lat!,
-                    lon: a.value.lon!
-                }) - haversine(userPos, {lat: b.value.lat!, lon: b.value.lon!}));
-                const top = new Set(withCoords.slice(0, 5).map(o => o.label));
-                mapped = mapped.map(o => top.has(o.label) ? ({...o, label: `⭐ ${o.label}`}) : o);
-                // Also move recommended to the top
-                mapped.sort((a, b) => Number(b.label.startsWith('⭐')) - Number(a.label.startsWith('⭐')));
-            }
-
             comunidades = mapped;
+            return mapped;
         } catch (e) {
-            console.error('Error cargando comunidades', e);
+            console.error('Error buscando comunidades por nombre', e);
+            return [];
         } finally {
             loadingComunidades = false;
         }
     }
 
     onMount(() => {
-        // Try to get user position for recommendations
-        if (navigator?.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const coords = {lat: pos.coords.latitude, lon: pos.coords.longitude};
-                    loadComunidades(coords);
-                },
-                () => loadComunidades(),
-                {enableHighAccuracy: true, timeout: 7000}
-            );
-        } else {
-            loadComunidades();
-        }
-    });
-    const onSave = async () => {
-        // if (selectedComunidad) {
-        //     payload.comunidadNombre = selectedComunidad.value.nombre;
-        //     payload.comunidadMunicipio = selectedComunidad.value.municipio;
-        // }
-        const {data} = await api.post(`/ideas`, {contenido: newIdeaText, comunidadId: selectedComunidad?.id});
-        const {idea} = data;
-        newIdeaText = '';
-        selectedComunidad = null;
-        ideas.unshift(idea);
-    }
-    const onclick = async () => {
-
-        await toast.promise(
-            onSave(),
-            {
-                loading: 'Cargando…',
-                success: 'Listo',
-                error: 'Error cargando ideas'
-            }
-        )
-    };
-
-
-    $effect(() => {
-        console.log('selectedComunidad', selectedComunidad);
+        // loadComunidades();
     })
 </script>
 <div class="card bg-base-100 shadow-xl w-full mx-auto mb-12">
     <div class="card-body">
         <h2 class="card-title text-primary mb-4">Tienes alguna idea que mejoraría nuestra calidad ambiental?</h2>
+        <input class="input input-md w-full mb-2"
+               placeholder="Escribe un titulo para la idea"
+               bind:value={newIdeaTitle}
+        />
         <textarea
-                class="textarea textarea-bordered w-full h-32 mb-2"
+                class="textarea textarea-bordered textarea-md w-full mb-2"
                 placeholder="Escribe tu idea aquí..."
                 bind:value={newIdeaText}
         ></textarea>
-
         <!-- Select de comunidad (opcional). Si compartes tu ubicación, te sugerimos las más cercanas. -->
         <div class="mb-4">
             <SvelteSelect
                     items={comunidades}
                     inputStyles="color: var(--text-primary); "
                     containerStyles="border-color: var(--text-primary); "
+                    loadOptions={searchByNombre}
                     bind:value={selectedComunidad}
-                    placeholder={loadingComunidades ? 'Cargando comunidades…' : 'Selecciona tu comunidad (opcional)'}
+                    hideEmptyState={true}
+                    debounceWait={500}
+                    placeholder={loadingComunidades ? 'Cargando comunidades…' : 'Busca una comunidad (opcional)'}
                     clearable={true}
                     searchable={true}
             />

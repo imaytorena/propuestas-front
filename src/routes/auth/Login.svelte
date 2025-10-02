@@ -1,6 +1,8 @@
 <script lang="ts">
     import { route } from '../../router';
     import toast from '../../lib/toast';
+    import api from '../../utils/api';
+    import { setSession } from '../../stores/auth';
 
     type FormData = { email: string; password: string };
     let form: FormData = { email: '', password: '' };
@@ -12,6 +14,15 @@
         return null;
     }
 
+    function getReturnTo(): string | null {
+        try {
+            const params = new URLSearchParams(window.location.search)
+            return params.get('returnTo')
+        } catch {
+            return null
+        }
+    }
+
     async function onSubmit(e: SubmitEvent) {
         e.preventDefault();
         const err = validate();
@@ -21,11 +32,14 @@
         }
         try {
             submitting = true;
-            // TODO: Integrar API de autenticación
-            await new Promise((r) => setTimeout(r, 600));
+            const { data } = await api.post('/auth/login', { email: form.email, password: form.password })
+            const token = (data as any)?.token
+            const user = (data as any)?.user
+            if (!token) throw new Error('Credenciales inválidas')
+            setSession(token, user)
             toast.success('Sesión iniciada');
-            // Redirigir a inicio
-            window.location.href = '/';
+            const returnTo = getReturnTo()
+            window.location.href = returnTo || '/';
         } catch (e) {
             console.error(e);
             toast.error('No se pudo iniciar sesión');

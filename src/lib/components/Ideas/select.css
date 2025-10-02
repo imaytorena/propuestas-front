@@ -11,8 +11,10 @@
     --list-background: var(--color-base-100);
     --input-color: var(--color-base-content);
     --text-primary: var(--color-base-content);
+    --font-size: var(--text-sm);
     border: var(--border) solid rgba(0, 0, 0, 0.2) !important;
 }
+
 .svelte-select:active, .svelte-select:focus, .svelte-select:focus-visible, .svelte-select:hover {
     border: var(--border) solid var(--input-color) !important;
 }

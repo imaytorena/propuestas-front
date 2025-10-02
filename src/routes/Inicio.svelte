@@ -5,7 +5,6 @@
     import VerMas from "../lib/components/VerMas.svelte";
     import IdeasCrear from "../lib/components/Ideas/IdeasCrear.svelte";
     import api from "../utils/api";
-    import toast from '../lib/toast';
 
     // Form state
     let loading = $state(true)
@@ -64,7 +63,7 @@
     function handleColoniaClick(colonia: any) {
         selectedColonia = colonia;
         // Aquí puedes filtrar las ideas por colonia o realizar otras acciones
-        console.log('Colonia seleccionada:', colonia);
+        // console.log('Colonia seleccionada:', colonia);
     }
 </script>
 
