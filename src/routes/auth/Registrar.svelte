@@ -23,7 +23,7 @@
         }
         try {
             submitting = true;
-            await api.post('/register', {
+            await api.post('/auth/register', {
                 identificador: form.identificador,
                 correo: form.correo,
                 password: form.password,
