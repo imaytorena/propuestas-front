@@ -17,7 +17,7 @@
     }
     saving = true
     try {
-      const { data } = await api.post(`/propuestas`, { title, description: descripcion })
+      const { data } = await api.post(`/propuestas`, { titulo: title, descripcion: descripcion })
       const id = data?.id ?? data?.data?.id
       // Navegar al detalle recién creado si tenemos id; si no, volver a la lista
       page.show(id ? `/propuestas/${id}` : '/propuestas')
