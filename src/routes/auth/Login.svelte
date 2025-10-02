@@ -33,10 +33,10 @@
         try {
             submitting = true;
             const { data } = await api.post('/auth/login', { email: form.email, password: form.password })
-            const token = (data as any)?.token
+            const access_token = (data as any)?.access_token
             const user = (data as any)?.user
-            if (!token) throw new Error('Credenciales inválidas')
-            setSession(token, user)
+            if (!access_token) throw new Error('Credenciales inválidas')
+            setSession(access_token, user)
             toast.success('Sesión iniciada');
             const returnTo = getReturnTo()
             window.location.href = returnTo || '/';
@@ -51,7 +51,7 @@
 
 <section class="max-w-md mx-auto w-full py-8">
     <h1 class="text-2xl font-bold mb-6">Iniciar sesión</h1>
-    <form on:submit={onSubmit} novalidate class="space-y-4">
+    <form onsubmit={onSubmit} novalidate class="space-y-4">
         <div class="form-control">
             <label for="email" class="label">
                 <span class="label-text">Correo electrónico</span>
