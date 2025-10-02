@@ -24,7 +24,7 @@
     try {
       const { data: idea } = await api.get(`/ideas/${ideaId}`)
       titulo = idea?.titulo ?? ''
-      descripcion = idea?.description ?? ''
+      descripcion = idea?.descripcion ?? ''
       loaded = true
     } catch (e: any) {
       error = e?.message ?? 'Error cargando idea'
