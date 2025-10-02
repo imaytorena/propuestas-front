@@ -193,7 +193,10 @@
             // Construye el payload para el API
             const payload: any = { nombre, descripcion }
             if (selectedTipo) payload.categoria = selectedTipo
-            // En un futuro podríamos enviar también la zona/polígono si el API lo soporta
+            // Enviar el polígono si hay suficientes puntos
+            if (Array.isArray(polygonPoints) && polygonPoints.length >= 3) {
+                payload.poligono = polygonPoints
+            }
             const {data} = await api.post(`/comunidades`, payload)
             const created = data?.data ?? data
             const id = created?.id
