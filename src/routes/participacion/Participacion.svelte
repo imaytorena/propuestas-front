@@ -51,7 +51,7 @@
         loading = true
         error = null
         try {
-            const {data} = await api.get(`/ideas`)
+            const {data} = await api.get(`/ideas?limit=10`)
             ideas = data.data ?? []
             totalIdeas = data.meta?.total ?? ideas.length
             pageCountIdeas = data.meta?.pageCount ?? Math.max(1, Math.ceil(totalIdeas / pageIdeasSize))
