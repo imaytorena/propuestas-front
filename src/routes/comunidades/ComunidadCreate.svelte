@@ -251,6 +251,21 @@
             ></textarea>
         </div>
 
+        <div class="form-control">
+            <label class="label" for="tipos">
+                <span class="text-sm italic flex items-center gap-2">
+                    <span class="inline-block h-4 w-4 rounded" style={`background:${selectedColor}`}></span>
+                </span>
+                <span class="label-text">Tipo de comunidad</span>
+            </label>
+            <select id="tipos" class={`select select-bordered w-full`} style={`border-color:${selectedColor}`}
+                    bind:value={selectedTipo} disabled={saving}>
+                <option value="" disabled>Selecciona tipo de comunidad</option>
+                {#each tiposOpciones as op}
+                    <option value={op}>{op}</option>
+                {/each}
+            </select>
+        </div>
 
         <div class="form-control">
             <label class="label flex flex-col items-start">
@@ -268,22 +283,6 @@
                         disabled={!polygonPoints.length}>Limpiar
                 </button>
             </div>
-        </div>
-
-        <div class="form-control">
-            <label class="label" for="tipos">
-                <span class="text-sm italic flex items-center gap-2">
-                    <span class="inline-block h-4 w-4 rounded" style={`background:${selectedColor}`}></span>
-                </span>
-                <span class="label-text">Tipo de comunidad</span>
-            </label>
-            <select id="tipos" class={`select select-bordered w-full`} style={`border-color:${selectedColor}`}
-                    bind:value={selectedTipo} disabled={saving}>
-                <option value="" disabled>Selecciona tipo de comunidad</option>
-                {#each tiposOpciones as op}
-                    <option value={op}>{op}</option>
-                {/each}
-            </select>
         </div>
 
         {#if saveError}
