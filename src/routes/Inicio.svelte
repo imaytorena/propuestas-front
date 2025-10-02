@@ -63,7 +63,20 @@
     function handleColoniaClick(colonia: any) {
         selectedColonia = colonia;
         // Aquí puedes filtrar las ideas por colonia o realizar otras acciones
-        // console.log('Colonia seleccionada:', colonia);
+        console.log('Colonia seleccionada:', colonia);
+    }
+
+    function goToComunidad() {
+        try {
+            const id = (selectedColonia as any)?.id ?? (selectedColonia as any)?.comunidadId ?? (selectedColonia as any)?.comunidad_id ?? (selectedColonia as any)?.slug;
+            if (id) {
+                window.location.href = `/comunidades/${encodeURIComponent(id)}`;
+            } else {
+                console.warn('No se encontró un id de comunidad para la colonia seleccionada', selectedColonia);
+            }
+        } catch (e) {
+            console.error('Error al redirigir a la comunidad', e);
+        }
     }
 </script>
 
@@ -90,22 +103,10 @@
                             Municipio: {selectedColonia.municipio}</p>
                     </div>
                     <div>
-                        <div class="mt-4 w-full rounded-lg bg-base-100 p-2">
-                            <p class="text-primary/80">Ideas: 8</p>
-                        </div>
-                        <div class="mt-4 w-full rounded-lg bg-base-100 p-2">
-                            <p class="text-primary/80">Propuestas: 10</p>
-                        </div>
-                        <div class="mt-4 w-full rounded-lg bg-base-100 p-2">
-                            <p class="text-primary/80">Actividades: 2</p>
-                        </div>
-                        <div class="mt-4 w-full rounded-lg bg-base-100 p-2">
-                            <p class="text-primary/80">Comunidades: 39</p>
-                        </div>
 
                     </div>
                     <div class="col-span-2 lg:col-span-1">
-                        <button class="btn btn-primary mt-4 w-full py-2 text-white">Ver más</button>
+                        <button class="btn btn-primary mt-4 w-full py-2 text-white" onclick={goToComunidad}>Ver comunidad</button>
                     </div>
                 </div>
             {/if}

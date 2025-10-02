@@ -27,6 +27,10 @@
     }
 
     const onSave = async () => {
+        if (!selectedComunidad?.id) {
+            toast.push('Selecciona una comunidad');
+            return;
+        }
         try {
             let {data} = await api.post(`/ideas`, {
                 titulo: newIdeaTitle,
@@ -101,7 +105,7 @@
                     bind:value={selectedComunidad}
                     hideEmptyState={true}
                     debounceWait={500}
-                    placeholder={loadingComunidades ? 'Cargando comunidades…' : 'Busca una comunidad (opcional)'}
+                    placeholder={loadingComunidades ? 'Cargando comunidades…' : 'Busca una comunidad'}
                     clearable={true}
                     searchable={true}
             />
@@ -111,7 +115,7 @@
             <button
                     class="btn btn-primary text-white disabled:bg-primary/10"
                     {onclick}
-                    disabled={!newIdeaText.trim()}
+                    disabled={!newIdeaText.trim() || !selectedComunidad?.id}
             >
                 Publicar Idea
             </button>

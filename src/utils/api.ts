@@ -3,7 +3,7 @@
 //api.ts
 import type {AxiosRequestConfig} from "axios";
 import axios from "axios";
-import { getToken } from '../stores/auth'
+import {getToken} from '../stores/auth'
 
 const API_BASE: string = (import.meta as any).env?.VITE_API_BASE ?? 'http://localhost:3000'
 
@@ -17,16 +17,11 @@ instance.interceptors.request.use(
     function (config) {
         // Attach JWT only for create-related endpoints (POST to propuestas/actividades/comunidades)
         try {
-            const method = (config.method ?? 'get').toLowerCase()
-            const url = config.url ?? ''
-            const isCreate = method === 'post' && (/\/propuestas\b/.test(url) || /\/actividades\b/.test(url) || /\/comunidades\b/.test(url))
-            if (isCreate) {
-                const token = getToken()
-                if (token) {
-                    config.headers = {
-                        ...(config.headers || {}),
-                        Authorization: `Bearer ${token}`,
-                    }
+            const token = getToken()
+            if (token) {
+                config.headers = {
+                    ...(config.headers || {}),
+                    Authorization: `Bearer ${token}`,
                 }
             }
         } catch (e) {
