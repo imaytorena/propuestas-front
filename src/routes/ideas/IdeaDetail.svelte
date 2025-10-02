@@ -71,8 +71,8 @@
     </header>
 
     <article class="prose max-w-none">
-      {#if (idea.description)}
-        <p>{idea.description}</p>
+      {#if (idea.descripcion)}
+        <p>{idea.descripcion}</p>
       {:else}
         <p class="text-base-content/70">Sin descripción.</p>
       {/if}

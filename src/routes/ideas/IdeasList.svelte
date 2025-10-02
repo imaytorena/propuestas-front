@@ -127,7 +127,8 @@
                 <li>
                     <article class="card bg-base-100 shadow-sm h-full">
                         <div class="card-body flex flex-col">
-                            <h2 class="card-descripcion text-base">{idea.descripcion ?? `Idea ${idea.id}`}</h2>
+                            <h3 class="card-title text-lg">{idea.titulo ?? `Idea ${idea.id}`}</h3>
+                            <p class="text-sm text-base-content/70">{idea.descripcion ?? `Idea ${idea.id}`}</p>
                             {#if idea.comunidad}
                                 <p class="line-clamp-3 text-sm text-base-content/80">{idea.comunidad.nombre}</p>
                             {/if}
