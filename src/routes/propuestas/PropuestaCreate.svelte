@@ -2,9 +2,11 @@
   import page from 'page'
   import { goto } from '../../utils/nav'
   import api from '../../utils/api'
+  import ActividadesForm from '../../lib/components/Actividades/ActividadesForm.svelte'
 
   let title: string = ''
   let descripcion: string = ''
+  let actividades: Array<{nombre: string, descripcion: string}> = []
   let saving = false
   let saveError: string | null = null
 
@@ -15,9 +17,21 @@
       saveError = 'El título es obligatorio'
       return
     }
+    if (actividades.length === 0) {
+      saveError = 'Debe agregar al menos una actividad'
+      return
+    }
+    if (actividades.some(act => !act.nombre.trim() || !act.descripcion.trim())) {
+      saveError = 'Todas las actividades deben tener nombre y descripción'
+      return
+    }
     saving = true
     try {
-      const { data } = await api.post(`/propuestas`, { titulo: title, descripcion: descripcion })
+      const { data } = await api.post(`/propuestas`, { 
+        titulo: title, 
+        descripcion: descripcion,
+        actividades: actividades
+      })
       const id = data?.id ?? data?.data?.id
       // Navegar al detalle recién creado si tenemos id; si no, volver a la lista
       page.show(id ? `/propuestas/${id}` : '/propuestas')
@@ -67,6 +81,8 @@
         <span class="label-text-alt">Puedes usar texto libre.</span>
       </div>
     </div>
+
+    <ActividadesForm bind:actividades />
 
     {#if saveError}
       <div role="alert" class="alert alert-error" aria-live="polite">

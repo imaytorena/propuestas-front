@@ -4,12 +4,14 @@
   import { route } from '../../router'
   import { goto } from '../../utils/nav'
   import api from '../../utils/api'
+  import ActividadesForm from '../../lib/components/Actividades/ActividadesForm.svelte'
 
   let propuestaId: string = ''
   $: propuestaId = $route.params.propuestaId
 
   let title: string = ''
   let descripcion: string = ''
+  let actividades: Array<{nombre: string, descripcion: string}> = []
   let loading = true
   let saving = false
   let error: string | null = null
@@ -24,6 +26,7 @@
       const { data: p } = await api.get(`/propuestas/${propuestaId}`)
       title = p?.title ?? p?.titulo ?? ''
       descripcion = p?.description ?? p?.descripcion ?? ''
+      actividades = p?.actividades ?? []
       loaded = true
     } catch (e: any) {
       error = e?.message ?? 'Error cargando propuesta'
@@ -40,9 +43,17 @@
       saveError = 'El título es obligatorio'
       return
     }
+    if (actividades.length === 0) {
+      saveError = 'Debe agregar al menos una actividad'
+      return
+    }
+    if (actividades.some(act => !act.nombre.trim() || !act.descripcion.trim())) {
+      saveError = 'Todas las actividades deben tener nombre y descripción'
+      return
+    }
     saving = true
     try {
-      await api.put(`/propuestas/${propuestaId}`, { title, description: descripcion })
+      await api.put(`/propuestas/${propuestaId}`, { title, description: descripcion, actividades })
       page.show(`/propuestas/${propuestaId}`)
     } catch (e: any) {
       saveError = e?.message ?? 'No se pudo guardar'
@@ -113,6 +124,8 @@
           <span class="label-text-alt">Puedes usar texto libre.</span>
         </div>
       </div>
+
+      <ActividadesForm bind:actividades />
 
       {#if saveError}
         <div role="alert" class="alert alert-error" aria-live="polite">
