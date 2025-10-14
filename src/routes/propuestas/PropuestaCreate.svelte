@@ -6,15 +6,37 @@
 
   let title: string = ''
   let descripcion: string = ''
+  let fechaActividad: string = ''
+  let horaActividad: string = ''
   let actividades: Array<{nombre: string, descripcion: string}> = []
   let saving = false
   let saveError: string | null = null
+
+  // Get today's date in YYYY-MM-DD format for min attribute
+  const today = new Date().toISOString().split('T')[0]
 
   async function create(event: SubmitEvent & { currentTarget: EventTarget & HTMLFormElement }) {
     event.preventDefault()
     saveError = null
     if (!title.trim()) {
       saveError = 'El título es obligatorio'
+      return
+    }
+    if (!fechaActividad) {
+      saveError = 'La fecha de actividad es obligatoria'
+      return
+    }
+    if (new Date(fechaActividad) < new Date(today)) {
+      saveError = 'La fecha de actividad no puede ser anterior a hoy'
+      return
+    }
+    if (!horaActividad) {
+      saveError = 'La hora de actividad es obligatoria'
+      return
+    }
+    const [hours] = horaActividad.split(':').map(Number)
+    if (hours < 7 || hours >= 22) {
+      saveError = 'La hora debe estar entre las 7:00 AM y las 10:00 PM'
       return
     }
     if (actividades.length === 0) {
@@ -30,6 +52,8 @@
       const { data } = await api.post(`/propuestas`, { 
         titulo: title, 
         descripcion: descripcion,
+        fechaActividad: fechaActividad,
+        horaActividad: horaActividad,
         actividades: actividades
       })
       const id = data?.id ?? data?.data?.id
@@ -79,6 +103,40 @@
       ></textarea>
       <div class="label">
         <span class="label-text-alt">Puedes usar texto libre.</span>
+      </div>
+    </div>
+
+    <div class="form-control">
+      <label class="label" for="fechaActividad">
+        <span class="label-text">Fecha de actividad</span>
+      </label>
+      <input
+        id="fechaActividad"
+        class="input input-bordered w-full"
+        type="date"
+        bind:value={fechaActividad}
+        min={today}
+        required
+        disabled={saving}
+      />
+    </div>
+
+    <div class="form-control">
+      <label class="label" for="horaActividad">
+        <span class="label-text">Hora de actividad</span>
+      </label>
+      <input
+        id="horaActividad"
+        class="input input-bordered w-full"
+        type="time"
+        bind:value={horaActividad}
+        min="07:00"
+        max="22:00"
+        required
+        disabled={saving}
+      />
+      <div class="label">
+        <span class="label-text-alt">Entre 7:00 AM y 10:00 PM</span>
       </div>
     </div>
 

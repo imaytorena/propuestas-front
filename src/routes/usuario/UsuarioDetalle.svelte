@@ -2,6 +2,7 @@
   import api from '../../utils/api'
   import { session, clearSession } from '../../stores/auth'
   import { onMount } from 'svelte'
+  import PropuestasSuscritas from '../../lib/components/PropuestasSuscritas.svelte'
 
   let loading = $state(false)
   let editing = $state(false)
@@ -204,6 +205,10 @@
           </div>
         {/if}
       </div>
+    </div>
+
+    <div class="mt-8">
+      <PropuestasSuscritas propuestas={me.propuestasSuscritas || []} />
     </div>
   {/if}
 </section>
