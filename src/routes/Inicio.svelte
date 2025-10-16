@@ -89,7 +89,7 @@
 <div class="container mx-auto p-4">
     <section class="mb-12">
         <h2 class="font-delius mb-4 text-center text-xl font-bold text-primary">
-            Da click en alguna colonia para conocer sus areas de oportunidad
+            Da click en alguna colonia para conocer sus áreas de oportunidad
         </h2>
         <div class="grid grid-cols-1 lg:flex gap-4">
             {#if colonias.length}

@@ -10,6 +10,7 @@
   let markingAttendance = $state(false)
   let attendanceError: string | null = $state(null)
   let showAllAttendees = $state(false)
+  let showAllInterested = $state(false)
 
   async function loadPropuesta() {
     if (!propuestaId) return
@@ -147,7 +148,7 @@
 
     <article class="prose max-w-none mb-6">
       {#if (propuesta.description ?? propuesta.descripcion)}
-        <p>{propuesta.description ?? propuesta.descripcion}</p>
+        <p class="break-all whitespace-pre-wrap">{propuesta.description ?? propuesta.descripcion}</p>
       {:else}
         <p class="text-base-content/70">Sin descripción.</p>
       {/if}
@@ -169,9 +170,9 @@
                   <div class="flex-shrink-0 w-8 h-8 bg-primary text-primary-content rounded-full flex items-center justify-center text-sm font-semibold">
                     {index + 1}
                   </div>
-                  <div class="flex-1">
-                    <h3 class="font-semibold text-lg mb-2 text-primary">{actividad.nombre}</h3>
-                    <p class="text-base-content/80 leading-relaxed">{actividad.descripcion}</p>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold text-lg mb-2 text-primary break-all">{actividad.nombre}</h3>
+                    <p class="text-base-content/80 leading-relaxed break-all whitespace-pre-wrap">{actividad.descripcion}</p>
                   </div>
                 </div>
               </div>
@@ -182,38 +183,84 @@
     {/if}
 
     {#if propuesta.asistentes && propuesta.asistentes.length > 0}
-      <section class="mt-8">
-        <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-          </svg>
-          Asistentes ({propuesta.asistentes.length})
-        </h2>
-        <div class="space-y-3">
-          {#each (showAllAttendees ? propuesta.asistentes : propuesta.asistentes.slice(0, 5)) as asistente}
-            <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-base-300">
-              <div class="flex items-start gap-3">
-                <div class="flex-shrink-0 w-8 h-8 bg-primary text-primary-content rounded-full flex items-center justify-center text-sm font-semibold">
-                  {asistente.cuenta?.identificador?.charAt(0)?.toUpperCase() || 'U'}
+      {@const asistentes = propuesta.asistentes.filter(a => a.estado === 'ASISTIRE')}
+      {@const interesados = propuesta.asistentes.filter(a => a.estado === 'ME_INTERESA')}
+      
+      <div class="mt-8 space-y-8">
+        <!-- Asistentes confirmados -->
+        {#if asistentes.length > 0}
+          <section>
+            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Asistentes confirmados ({asistentes.length})
+            </h2>
+            <div class="space-y-3">
+              {#each (showAllAttendees ? asistentes : asistentes.slice(0, 5)) as asistente}
+                <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-success/20">
+                  <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-success text-success-content rounded-full flex items-center justify-center text-sm font-semibold">
+                      {asistente.cuenta?.identificador?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="font-medium break-all">{asistente.cuenta?.identificador || 'Usuario'}</p>
+                    <p class="text-sm text-base-content/70 break-all">{asistente.cuenta?.correo || 'Sin email'}</p>
+                  </div>
+                  <span class="badge badge-success badge-sm">Asistirá</span>
                 </div>
-              </div>
-              <div class="flex-1">
-                <p class="font-medium">{asistente.cuenta?.identificador || 'Usuario'}</p>
-                <p class="text-sm text-base-content/70">{asistente.cuenta?.correo || 'Sin email'}</p>
-              </div>
+              {/each}
+              {#if asistentes.length > 5 && !showAllAttendees}
+                <button class="btn btn-outline btn-sm" onclick={() => showAllAttendees = true}>
+                  Ver más ({asistentes.length - 5} más)
+                </button>
+              {:else if showAllAttendees && asistentes.length > 5}
+                <button class="btn btn-outline btn-sm" onclick={() => showAllAttendees = false}>
+                  Ver menos
+                </button>
+              {/if}
             </div>
-          {/each}
-          {#if propuesta.asistentes.length > 5 && !showAllAttendees}
-            <button class="btn btn-outline btn-sm" onclick={() => showAllAttendees = true}>
-              Ver más ({propuesta.asistentes.length - 5} más)
-            </button>
-          {:else if showAllAttendees && propuesta.asistentes.length > 5}
-            <button class="btn btn-outline btn-sm" onclick={() => showAllAttendees = false}>
-              Ver menos
-            </button>
-          {/if}
-        </div>
-      </section>
+          </section>
+        {/if}
+
+        <!-- Interesados -->
+        {#if interesados.length > 0}
+          <section>
+            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+              </svg>
+              Interesados ({interesados.length})
+            </h2>
+            <div class="space-y-3">
+              {#each (showAllInterested ? interesados : interesados.slice(0, 5)) as interesado}
+                <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-info/20">
+                  <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-info text-info-content rounded-full flex items-center justify-center text-sm font-semibold">
+                      {interesado.cuenta?.identificador?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="font-medium break-all">{interesado.cuenta?.identificador || 'Usuario'}</p>
+                    <p class="text-sm text-base-content/70 break-all">{interesado.cuenta?.correo || 'Sin email'}</p>
+                  </div>
+                  <span class="badge badge-info badge-sm">Le interesa</span>
+                </div>
+              {/each}
+              {#if interesados.length > 5 && !showAllInterested}
+                <button class="btn btn-outline btn-sm" onclick={() => showAllInterested = true}>
+                  Ver más ({interesados.length - 5} más)
+                </button>
+              {:else if showAllInterested && interesados.length > 5}
+                <button class="btn btn-outline btn-sm" onclick={() => showAllInterested = false}>
+                  Ver menos
+                </button>
+              {/if}
+            </div>
+          </section>
+        {/if}
+      </div>
     {/if}
   {/if}
 </section>

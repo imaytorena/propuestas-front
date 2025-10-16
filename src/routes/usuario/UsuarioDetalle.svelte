@@ -12,9 +12,15 @@
   let me: any = $state(null)
   let editForm = $state({
     identificador: '',
+    nombre: '',
+    apellido: '',
     correo: '',
     codigo: ''
   })
+  let checkingUsername = $state(false)
+  let usernameError = $state('')
+  let usernameTimeout: number
+  let originalUsername = ''
 
   function getInitial(text?: string | null): string {
     if (!text || typeof text !== 'string' || text.length === 0) return '?'
@@ -30,9 +36,12 @@
       if (me) {
         editForm = {
           identificador: me.identificador || '',
+          nombre: me.nombre || '',
+          apellido: me.apellido || '',
           correo: me.correo || '',
           codigo: me.codigo || ''
         }
+        originalUsername = me.identificador || ''
       }
     } catch (e: any) {
       error = e?.message ?? 'No se pudo cargar el perfil'
@@ -46,9 +55,35 @@
     window.location.href = '/'
   }
 
+  async function checkUsername(username: string) {
+    if (!username || username.length < 2 || username === originalUsername) {
+      usernameError = ''
+      return
+    }
+    
+    try {
+      checkingUsername = true
+      const { data } = await api.get(`usuarios/validate/identificador?identificador=${encodeURIComponent(username)}`)
+      usernameError = data.available ? '' : 'Este username ya está en uso'
+    } catch (e: any) {
+      usernameError = 'Error verificando username'
+    } finally {
+      checkingUsername = false
+    }
+  }
+
+  function onUsernameChange() {
+    clearTimeout(usernameTimeout)
+    usernameError = ''
+    if (editForm.identificador.trim().length >= 2 && editForm.identificador !== originalUsername) {
+      usernameTimeout = setTimeout(() => checkUsername(editForm.identificador), 500)
+    }
+  }
+
   function startEdit() {
     editing = true
     saveError = null
+    usernameError = ''
   }
 
   function cancelEdit() {
@@ -57,15 +92,22 @@
     if (me) {
       editForm = {
         identificador: me.identificador || '',
+        nombre: me.nombre || '',
+        apellido: me.apellido || '',
         correo: me.correo || '',
         codigo: me.codigo || ''
       }
+      usernameError = ''
     }
   }
 
   async function saveProfile() {
     if (!editForm.identificador.trim() || !editForm.correo.trim()) {
       saveError = 'Identificador y correo son obligatorios'
+      return
+    }
+    if (usernameError) {
+      saveError = usernameError
       return
     }
     
@@ -109,7 +151,7 @@
               {getInitial(me.identificador || me.correo)}
             </div>
             <div>
-              <h2 class="font-bold text-xl">{me.identificador || 'Usuario'}</h2>
+              <h2 class="font-bold text-xl">{me.nombre && me.apellido ? `${me.nombre} ${me.apellido}` : me.identificador || 'Usuario'}</h2>
               <p class="text-base-content/70">{me.correo}</p>
               <div class="flex items-center gap-4 mt-1 text-sm text-base-content/60">
                 <span class="font-mono">ID: {me.id}</span>
@@ -126,17 +168,66 @@
           <div class="space-y-4">
             <div class="form-control">
               <label class="label" for="identificador">
-                <span class="label-text">Identificador <span class="text-error">*</span></span>
+                <span class="label-text">Username <span class="text-error">*</span></span>
               </label>
-              <input
-                id="identificador"
-                class="input input-bordered"
-                type="text"
-                bind:value={editForm.identificador}
-                placeholder="Tu identificador"
-                disabled={saving}
-                required
-              />
+              <div class="relative">
+                <input
+                  id="identificador"
+                  class="input input-bordered"
+                  class:input-error={usernameError}
+                  class:input-success={editForm.identificador.length >= 2 && !usernameError && !checkingUsername && editForm.identificador !== originalUsername}
+                  type="text"
+                  bind:value={editForm.identificador}
+                  oninput={onUsernameChange}
+                  placeholder="Tu identificador"
+                  disabled={saving}
+                  required
+                />
+                {#if checkingUsername}
+                  <div class="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div class="loading loading-spinner loading-sm"></div>
+                  </div>
+                {/if}
+              </div>
+              {#if usernameError}
+                <div class="label">
+                  <span class="label-text-alt text-error">{usernameError}</span>
+                </div>
+              {:else if editForm.identificador.length >= 2 && !checkingUsername && editForm.identificador !== originalUsername}
+                <div class="label">
+                  <span class="label-text-alt text-success">Username disponible</span>
+                </div>
+              {/if}
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="form-control">
+                <label class="label" for="nombre">
+                  <span class="label-text">Nombre</span>
+                </label>
+                <input
+                  id="nombre"
+                  class="input input-bordered"
+                  type="text"
+                  bind:value={editForm.nombre}
+                  placeholder="Tu nombre"
+                  disabled={saving}
+                />
+              </div>
+
+              <div class="form-control">
+                <label class="label" for="apellido">
+                  <span class="label-text">Apellido</span>
+                </label>
+                <input
+                  id="apellido"
+                  class="input input-bordered"
+                  type="text"
+                  bind:value={editForm.apellido}
+                  placeholder="Tu apellido"
+                  disabled={saving}
+                />
+              </div>
             </div>
 
             <div class="form-control">
@@ -156,7 +247,7 @@
 
             <div class="form-control">
               <label class="label" for="codigo">
-                <span class="label-text">Código Postál</span>
+                <span class="label-text">No. Cuenta</span>
               </label>
               <input
                 id="codigo"
@@ -184,8 +275,13 @@
         {:else}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="stat bg-base-200 rounded-lg">
-              <div class="stat-title">Identificador</div>
+              <div class="stat-title">Username</div>
               <div class="stat-value text-lg">{me.identificador || 'No definido'}</div>
+            </div>
+            
+            <div class="stat bg-base-200 rounded-lg">
+              <div class="stat-title">Nombre completo</div>
+              <div class="stat-value text-lg">{me.nombre && me.apellido ? `${me.nombre} ${me.apellido}` : 'No definido'}</div>
             </div>
             
             <div class="stat bg-base-200 rounded-lg">
@@ -194,7 +290,7 @@
             </div>
             
             <div class="stat bg-base-200 rounded-lg">
-              <div class="stat-title">Código Postál</div>
+              <div class="stat-title">No. Cuenta</div>
               <div class="stat-value text-lg">{me.codigo || 'No asignado'}</div>
             </div>
             
@@ -208,7 +304,10 @@
     </div>
 
     <div class="mt-8">
-      <PropuestasSuscritas propuestas={me.propuestasSuscritas || []} />
+      <PropuestasSuscritas 
+        propuestaIdsAsistire={me.propuestaIdsAsistire || []} 
+        propuestasInteres={me.propuestasInteres || []} 
+      />
     </div>
   {/if}
 </section>
