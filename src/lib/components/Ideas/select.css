@@ -2,6 +2,12 @@
     color: var(--input-color) !important;
 }
 
+/* Asegurar que el dropdown del select quede por encima del mapa de Leaflet */
+.svelte-select-list {
+    z-index: 10000 !important;
+    position: relative;
+}
+
 .svelte-select {
     /*--placeholder-color: red;*/
     /*--input-color: --color-base-content;*/
@@ -13,6 +19,8 @@
     --text-primary: var(--color-base-content);
     --font-size: var(--text-sm);
     border: var(--border) solid rgba(0, 0, 0, 0.2) !important;
+    position: relative;
+    z-index: 10001; /* también encima del mapa */
 }
 
 .svelte-select:active, .svelte-select:focus, .svelte-select:focus-visible, .svelte-select:hover {

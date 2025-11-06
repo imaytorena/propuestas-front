@@ -5,7 +5,6 @@
     import page from "page";
 
     const {idea} = $props();
-    console.log(idea);
     let editing: boolean = $state(false);
     let showingHistory: boolean = $state(false);
     let generating: boolean = $state(false);

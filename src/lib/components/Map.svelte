@@ -20,22 +20,23 @@
     let prevCount = 0;
 
     function getStyle(feature: any) {
+        const c = feature?.properties?.color || 'var(--color-primary)'
         return {
-            fillColor: 'var(--color-primary)',
+            fillColor: c,
             weight: 2,
-            opacity: .15,
-            // color: 'rgba(0, 128, 51, .1)',
-            color: 'var(--color-primary)',
+            opacity: .8,
+            color: c,
             dashArray: '3',
-            fillOpacity: 0.2
+            fillOpacity: 0.25
         };
     }
 
     function highlightFeature(e: any) {
         const layer = e.target;
+        const c = layer?.feature?.properties?.color || 'var(--color-primary)'
         layer.setStyle({
             weight: 3,
-            color: 'var(--color-primary)',
+            color: c,
             dashArray: '',
             fillOpacity: 0.5
         });
@@ -48,18 +49,22 @@
         }
     }
 
-    // React when colonias prop grows: add only new features to the layer
+    // React to colonias changes: if added, append; if reduced/replaced, reset layer
     $effect.pre(() => {
         const list = $state.snapshot(colonias) ?? [];
         if (!geoJsonLayer) return;
         if (!Array.isArray(list)) return;
-        if (list.length > prevCount) {
+        if (list.length < prevCount) {
+            // Filters applied or list replaced: rebuild layer
+            geoJsonLayer.clearLayers();
+            if (list.length) {
+                geoJsonLayer.addData({ type: 'FeatureCollection', features: list });
+            }
+            prevCount = list.length;
+        } else if (list.length > prevCount) {
             const newItems = list.slice(prevCount);
             if (newItems.length) {
-                geoJsonLayer.addData({
-                    type: 'FeatureCollection',
-                    features: newItems
-                });
+                geoJsonLayer.addData({ type: 'FeatureCollection', features: newItems });
                 prevCount = list.length;
             }
         }
@@ -80,8 +85,8 @@
             onEachFeature: (feature, layer) => {
                 // Popup con información de la colonia
                 layer.bindPopup(`
-                  <div class="text-primary font-bold">${feature.properties.nombre}</div>
-                  <div class="text-primary text-sm">${feature.properties.municipio}</div>
+                  <div style="color: ${feature?.properties?.color ? `${feature.properties.color.trim()}` :  "var(--color-primary)"}; font-weight: bold">${feature.properties.nombre}</div>
+                  <div style="color: ${feature?.properties?.color ? `${feature.properties.color.trim()}` :  "var(--color-primary)"}; font-size: small">${feature.properties.municipio ?? ""}</div>
                 `);
                 // Eventos de interacción
                 layer.on({
@@ -129,7 +134,7 @@
 <div
         bind:this={mapElement}
         id="map"
-        class="w-full lg:max-w-full h-[50vh]"
+        class="w-full lg:max-w-full h-[50vh] relative z-0"
 >
 </div>
 <!-- 

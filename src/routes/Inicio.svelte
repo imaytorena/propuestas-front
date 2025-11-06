@@ -5,6 +5,9 @@
     import VerMas from "../lib/components/VerMas.svelte";
     import IdeasCrear from "../lib/components/Ideas/IdeasCrear.svelte";
     import api from "../utils/api";
+    import {toPolygonFeatureFromAny} from "../utils/geo";
+    import SvelteSelect from 'svelte-select';
+    import "../lib/components/Ideas/select.css";
 
     // Form state
     let loading = $state(true)
@@ -15,23 +18,134 @@
     let selectedColonia: { nombre: string; municipio: string } | null = $state(null);
     let selectedOption = $state('Ideas');
 
-    const loadColonias = async () => {
+    // Filtro: categorías (multi-select)
+    // Selección por defecto (ajusta según tu preferencia)
+    const DEFAULT_CATEGORIES: string[] = ['Vecinos']
+    const categoriasOpciones: string[] = [
+        'Vecinos',
+        'Estudiantes',
+        'Madres y padres de familia',
+        'Personas mayores',
+        'Pueblos originarios',
+        'Trabajadores',
+        'Colectivos',
+        'Ciclistas',
+        'Personas con discapacidad',
+        'Agricultores',
+        'Voluntariado',
+        'Sociedad',
+    ];
+    const categoriaColor: Record<string, string> = {
+        'Vecinos': '#2563eb',
+        'Estudiantes': '#16a34a',
+        'Madres y padres de familia': '#f59e0b',
+        'Personas mayores': '#ef4444',
+        'Pueblos originarios': '#a855f7',
+        'Trabajadores': '#0ea5e9',
+        'Colectivos': '#22c55e',
+        'Ciclistas': '#eab308',
+        'Personas con discapacidad': '#fb7185',
+        'Agricultores': '#10b981',
+        'Voluntariado': '#f97316',
+        'Sociedad': '#64748b'
+    };
+
+    // Helpers para normalizar categoría de backend a una conocida
+    function stripAccents(s: string): string {
+        try { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch { return s; }
+    }
+    function normalizeCategoriaName(val: any): string | null {
+        if (!val) return null;
+        const raw = String(val).trim();
+        if (!raw) return null;
+        const norm = stripAccents(raw).toLowerCase();
+        // Buscar coincidencia exacta (ignora mayúsculas/acentos) en la lista oficial
+        for (const opt of categoriasOpciones) {
+            if (stripAccents(opt).toLowerCase() === norm) return opt;
+        }
+        // Si viene en objeto { nombre }
+        return null;
+    }
+
+    type Option = { label: string; value: string };
+    const categoriaOptions: Option[] = categoriasOpciones.map(c => ({ label: c, value: c }));
+    // Preselección por defecto basada en DEFAULT_CATEGORIES
+    const defaultCategoriaOptions: Option[] = categoriaOptions.filter(o => DEFAULT_CATEGORIES.includes(o.value))
+    let categoriasSeleccionadas: Option[] = $state(defaultCategoriaOptions);
+    // Control de recargas y debounce para filtros (Svelte 5)
+    let loadSeq = $state(0)
+    let filterDebounce: any = $state(null)
+
+    function categoriasQuery(): string | null {
+        if (!Array.isArray(categoriasSeleccionadas) || categoriasSeleccionadas.length === 0) return null;
+        return categoriasSeleccionadas.map(o => o.value).join(',');
+    }
+
+    const loadColonias = async (seq?: number) => {
+        const thisSeq = seq ?? loadSeq
         error = null
         let cursor: string | null | undefined = undefined
         let pageCount = 0
         try {
             while (true) {
-                const url = `/colonias` + (cursor ? `?cursor=${encodeURIComponent(cursor)}` : '?limit=200')
-                const {data: json}: any = await api.get(url);
-                colonias = [...(colonias ?? []), ...json.data]
+                // Si hay un cambio de filtro mientras cargamos, abortar
+                if (thisSeq !== loadSeq) return;
+                const base = `/comunidades/map`;
+                const params: string[] = [];
+                if (cursor) params.push(`cursor=${encodeURIComponent(cursor)}`); else params.push('limit=100');
+                const cats = categoriasQuery();
+                if (cats) {
+                    // Encode each category value but keep commas unencoded so the backend can split by ','
+                    const enc = cats.split(',').map((c) => encodeURIComponent(c)).join(',');
+                    params.push(`categorias=${enc}`);
+                }
+                const url = `${base}?${params.join('&')}`;
+                const {data}: any = await api.get(url);
+                const items = (data?.data ?? []) as any[]
+                const features = items
+                    .map((c: any) => {
+                        // Extraer categoria desde múltiples formas: string, objeto {nombre}, arreglo de strings/objetos
+                        function extractRawCategoria(src: any): any {
+                            if (!src) return null;
+                            if (typeof src === 'string') return src;
+                            if (Array.isArray(src)) {
+                                // Busca el primer valor utilizable
+                                for (const it of src) {
+                                    if (typeof it === 'string') return it;
+                                    if (it && typeof it === 'object' && (it.nombre || it.name)) return it.nombre || it.name;
+                                }
+                                return null;
+                            }
+                            if (typeof src === 'object') {
+                                return src.nombre ?? src.name ?? null;
+                            }
+                            return null;
+                        }
+                        const rawCat = extractRawCategoria(c?.categoria) ?? extractRawCategoria(c?.tipo) ?? extractRawCategoria(c?.categorias) ?? extractRawCategoria(c?.properties?.categoria);
+                        const normalizedCat = rawCat ? (normalizeCategoriaName(rawCat) ?? String(rawCat)) : null;
+                        const cat = normalizedCat && categoriaColor[normalizedCat] ? normalizedCat : (normalizeCategoriaName(normalizedCat) ?? normalizedCat);
+                        const color = (cat && categoriaColor[cat]) ? categoriaColor[cat] : 'var(--color-primary)';
+
+                        const feat = toPolygonFeatureFromAny(
+                            c?.features ?? c?.poligono ?? c?.polygon ?? c?.area ?? c?.coordinates ?? c,
+                            {
+                                ...(c?.properties ?? {}),
+                                color
+                            }
+                        )
+                        return feat
+                    })
+                    .filter(Boolean)
+                colonias = [...(colonias ?? []), ...features]
                 // Determine the next cursor from common fields
-                const next = (json && (json.cursor ?? json.nextCursor ?? json.next_cursor ?? json.data?.cursor ?? json.meta?.nextCursor)) ?? null
+                const next = (data && (data.cursor ?? data.nextCursor ?? data.next_cursor ?? data.data?.cursor ?? data.meta?.nextCursor)) ?? null
                 cursor = next || null
                 pageCount++
                 if (!cursor || pageCount > 100) break
             }
         } catch (e: any) {
             error = e?.message ?? 'Error cargando colonias'
+        } finally {
             loading = false
         }
     }
@@ -40,9 +154,7 @@
         error = null
         try {
             const {data} = await api.get(`/ideas?limit=5`)
-            console.log(data)
             ideas = data.data
-            console.log(ideas)
 
         } catch (e: any) {
             error = e?.message ?? 'Error cargando idea'
@@ -58,10 +170,34 @@
 
     onMount(() => {
         colonias = []
-        // Load colonias progressively (do not await)
-        loadColonias();
+        // Primera carga basada en selección por defecto
+        loadSeq = (loadSeq || 0) + 1
+        loading = true
+        loadColonias(loadSeq)
+        // Cargar ideas en paralelo
         loadIdeas();
     })
+
+    // Handlers for SvelteSelect events (Svelte 5): trigger debounced reloads
+    function triggerFilterReload() {
+        if (filterDebounce) clearTimeout(filterDebounce)
+        filterDebounce = setTimeout(() => {
+            loadSeq = (loadSeq || 0) + 1
+            colonias = []
+            loading = true
+            loadColonias(loadSeq)
+        }, 250)
+    }
+
+    function onCategoriaSelect(_: any) {
+        // e.detail contains the selected option; value is already bound via bind:value
+        triggerFilterReload()
+    }
+
+    function onCategoriaChange() {
+        // Covers clear/remove/reset
+        triggerFilterReload()
+    }
 
     function handleColoniaClick(colonia: any) {
         selectedColonia = colonia;
@@ -71,7 +207,8 @@
 
     function goToComunidad() {
         try {
-            const id = (selectedColonia as any)?.id ?? (selectedColonia as any)?.comunidadId ?? (selectedColonia as any)?.comunidad_id ?? (selectedColonia as any)?.slug;
+            const src: any = selectedColonia ?? {};
+            const id = src?.id ?? src?.comunidadId ?? src?.comunidad_id ?? src?.slug ?? src?.properties?.id ?? src?.properties?.comunidadId ?? src?.properties?.comunidad_id ?? src?.properties?.slug;
             if (id) {
                 window.location.href = `/comunidades/${encodeURIComponent(id)}`;
             } else {
@@ -88,22 +225,38 @@
 {/if}
 <div class="container mx-auto p-4">
     <section class="mb-12">
-        <h2 class="font-delius mb-4 text-center text-xl font-bold text-primary">
+        <h2 class="font-delius mb-2 text-center text-xl font-bold text-primary">
             Da click en alguna colonia para conocer sus áreas de oportunidad
         </h2>
+        <!-- Filtro por categorías -->
+        <div class="mx-auto mb-4 max-w-3xl w-full relative z-50">
+            <SvelteSelect
+                items={categoriaOptions}
+                bind:value={categoriasSeleccionadas}
+                placeholder="Filtra por categorías (opcional)"
+                hideEmptyState={true}
+                clearable={true}
+                searchable={true}
+                multiple={true}
+                inputStyles="color: var(--text-primary);"
+                containerStyles="border-color: var(--text-primary);"
+                on:select={onCategoriaSelect}
+                on:clear={onCategoriaChange}
+                on:remove={onCategoriaChange}
+            />
+        </div>
         <div class="grid grid-cols-1 lg:flex gap-4">
-            {#if colonias.length}
-                <Map colonias={colonias}
-                     onColoniaClick={handleColoniaClick}
-                />
-            {/if}
+
+            <Map colonias={colonias}
+                 onColoniaClick={handleColoniaClick}
+            />
             {#if selectedColonia}
                 <div class="grid grid-cols-2 lg:grid-cols-1 gap-4 items-center">
                     <div class="mt-4 h-max w-full rounded-lg border-2 border-primary/50 bg-primary/20 p-4">
                         <h3 class="text-lg lg:text-xl font-semibold text-primary">
-                            Colonia: {selectedColonia.nombre}</h3>
-                        <p class="text-primary/80 break-words md:break-normal">
-                            Municipio: {selectedColonia.municipio}</p>
+                            Comunidad: {selectedColonia.nombre}</h3>
+<!--                        <p class="text-primary/80 break-words md:break-normal">-->
+<!--                            Municipio: {selectedColonia.municipio}</p>-->
                     </div>
                     <div>
 

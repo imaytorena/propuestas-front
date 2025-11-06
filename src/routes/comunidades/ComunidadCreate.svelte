@@ -4,6 +4,7 @@
     import api from '../../utils/api'
     import toast from '../../lib/toast'
     import {onDestroy, onMount} from 'svelte'
+    import { latLngArrayToLegacyCoords } from '../../utils/geo'
 
     // Form state
     let nombre = $state<string>('')
@@ -195,7 +196,7 @@
             if (selectedTipo) payload.categoria = selectedTipo
             // Enviar el polígono si hay suficientes puntos
             if (Array.isArray(polygonPoints) && polygonPoints.length >= 3) {
-                payload.poligono = polygonPoints
+                payload.poligono = latLngArrayToLegacyCoords(polygonPoints)
             }
             const {data} = await api.post(`/comunidades`, payload)
             const created = data?.data ?? data

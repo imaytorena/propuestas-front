@@ -18,7 +18,7 @@
     error = null
     try {
       const { data } = await api.get(`/propuestas/${propuestaId}`)
-      propuesta = data
+      propuesta = (data as any)?.data ?? data
     } catch (e: any) {
       error = e?.message ?? 'Error cargando propuesta'
     } finally {
@@ -112,29 +112,39 @@
         </nav>
       </div>
       
-      <div class="flex items-center gap-4 text-sm text-base-content/70">
+      <div class="flex flex-wrap items-center gap-4 text-sm text-base-content/70">
         {#if propuesta.creador || propuesta.autor || propuesta.usuario}
+          {@const creador = propuesta.creador ?? propuesta.autor ?? propuesta.usuario}
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
             </svg>
-            <span>Creado por: <span class="font-medium text-base-content">{propuesta.creador?.identificador}</span></span>
+            <span>Creado por: <span class="font-medium text-base-content">{creador.nombre ?? creador.identificador ?? creador.username ?? creador.email ?? 'Usuario'}</span></span>
           </div>
         {/if}
-        {#if propuesta.fechaActividad}
+
+        {#if propuesta.comunidad || propuesta.comunidadId || propuesta.communityId}
+          {@const c = propuesta.comunidad}
+          {@const cid = propuesta.comunidadId ?? propuesta.communityId ?? c?.id}
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+            </svg>
+            {#if cid}
+              <a href={`/comunidades/${cid}`} onclick={goto} class="link link-primary">{c?.nombre ?? `Comunidad ${cid}`}</a>
+            {:else}
+              <span>Comunidad: <span class="font-medium text-base-content">{c?.nombre ?? '—'}</span></span>
+            {/if}
+          </div>
+        {/if}
+
+        {#if propuesta.createdAt || propuesta.fechaCreacion || propuesta.created_at}
+          {@const created = propuesta.createdAt ?? propuesta.fechaCreacion ?? propuesta.created_at}
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
             </svg>
-            <span>Fecha: <span class="font-medium text-base-content">{new Date(propuesta.fechaActividad).toLocaleDateString('es-ES')}</span></span>
-          </div>
-        {/if}
-        {#if propuesta.horaActividad}
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span>Hora: <span class="font-medium text-base-content">{propuesta.horaActividad}</span></span>
+            <span>Creada: <span class="font-medium text-base-content">{new Date(created).toLocaleDateString('es-MX')}</span></span>
           </div>
         {/if}
       </div>
@@ -154,32 +164,35 @@
       {/if}
     </article>
 
-    {#if propuesta.actividades && propuesta.actividades.length > 0}
-      <section class="mt-8">
-        <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-          </svg>
-          Actividades a realizar
-        </h2>
-        <div class="grid gap-4">
-          {#each propuesta.actividades as actividad, index}
-            <div class="card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
-              <div class="card-body p-4">
-                <div class="flex items-start gap-3">
-                  <div class="flex-shrink-0 w-8 h-8 bg-primary text-primary-content rounded-full flex items-center justify-center text-sm font-semibold">
-                    {index + 1}
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold text-lg mb-2 text-primary break-all">{actividad.nombre}</h3>
-                    <p class="text-base-content/80 leading-relaxed break-all whitespace-pre-wrap">{actividad.descripcion}</p>
+    {#if propuesta.actividades}
+      {@const acts = Array.isArray(propuesta.actividades) ? propuesta.actividades : Object.values(propuesta.actividades ?? {})}
+      {#if acts.length > 0}
+        <section class="mt-8">
+          <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+            </svg>
+            Actividades a realizar
+          </h2>
+          <div class="grid gap-4">
+            {#each acts as actividad, index}
+              <div class="card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+                <div class="card-body p-4">
+                  <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 bg-primary text-primary-content rounded-full flex items-center justify-center text-sm font-semibold">
+                      {index + 1}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-semibold text-lg mb-2 text-primary break-all">{actividad.nombre ?? actividad.title}</h3>
+                      <p class="text-base-content/80 leading-relaxed break-all whitespace-pre-wrap">{actividad.descripcion ?? actividad.description}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          {/each}
-        </div>
-      </section>
+            {/each}
+          </div>
+        </section>
+      {/if}
     {/if}
 
     {#if propuesta.asistentes && propuesta.asistentes.length > 0}

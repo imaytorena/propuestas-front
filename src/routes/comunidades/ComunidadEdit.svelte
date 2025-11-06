@@ -6,6 +6,7 @@
     import {goto} from '../../utils/nav'
     import api from '../../utils/api'
     import toast from '../../lib/toast'
+    import { latLngArrayToLegacyCoords } from '../../utils/geo'
 
     let comunidadId = $derived($route.params.comunidadId);
 
@@ -228,9 +229,9 @@
         try {
             const payload: any = {nombre, descripcion}
             if (selectedCategoria) payload.categoria = selectedCategoria
-            // Enviar el polígono si hay suficientes puntos
+            // Enviar el polígono si hay suficientes puntos (formato legacy [[[lng,lat],...]] )
             if (Array.isArray(polygonPoints) && polygonPoints.length >= 3) {
-                payload.poligono = polygonPoints
+                payload.poligono = latLngArrayToLegacyCoords(polygonPoints)
             }
             await api.put(`/comunidades/${comunidadId}`, payload)
             toast.success('Comunidad actualizada')

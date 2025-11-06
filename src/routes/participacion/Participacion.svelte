@@ -51,7 +51,7 @@
         loading = true
         error = null
         try {
-            const {data} = await api.get(`/ideas?limit=10`)
+            const {data} = await api.get(`/ideas?limit=6`)
             ideas = data.data ?? []
             totalIdeas = data.meta?.total ?? ideas.length
             pageCountIdeas = data.meta?.pageCount ?? Math.max(1, Math.ceil(totalIdeas / pageIdeasSize))
@@ -73,7 +73,7 @@
         loading = true
         error = null
         try {
-            const {data} = await api.get(`/propuestas`)
+            const {data} = await api.get(`/propuestas?limit=6`)
             propuestas = data ?? [];
             totalPropuestas = data.meta?.total ?? propuestas.length
             pageCountPropuestas = data.meta?.pageCount ?? Math.max(1, Math.ceil(totalPropuestas / pagePropuestasSize))
@@ -95,8 +95,7 @@
         loading = true
         error = null
         try {
-            const {data} = await api.get(`/comunidades`)
-            console.log(data);
+            const {data} = await api.get(`/comunidades?limit=6`)
             comunidades = data ?? [];
             totalComunidades = data.meta?.total ?? comunidades.length
             pageCountComunidades = data.meta?.pageCount ?? Math.max(1, Math.ceil(totalComunidades / pageComunidadesSize))
