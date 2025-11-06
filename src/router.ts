@@ -1,6 +1,6 @@
 import page from 'page'
 import {writable} from 'svelte/store'
-import { isAuthenticated } from './stores/auth'
+import {isAuthenticated} from './stores/auth'
 import toast from "./lib/toast";
 
 export type RouteName = 'inicio' | 'participacion' |
@@ -25,7 +25,8 @@ function setRoute(name: RouteName, ctx: any) {
 }
 
 export async function initRouter() {
-    const { isAuthenticated } = await import('./stores/auth')
+    const {isAuthenticated} = await import('./stores/auth')
+
     function requireAuth(ctx: any, next: any) {
         if (!isAuthenticated()) {
             const returnTo = encodeURIComponent(ctx.path + (ctx.querystring ? `?${ctx.querystring}` : ''))
@@ -35,6 +36,7 @@ export async function initRouter() {
             next()
         }
     }
+
     // Ideas
     page('/ideas', (ctx: any) => setRoute('ideas', ctx))
     page('/ideas/crear', (ctx: any) => setRoute('idea-crear', ctx))

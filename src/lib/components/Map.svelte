@@ -85,8 +85,8 @@
             onEachFeature: (feature, layer) => {
                 // Popup con información de la colonia
                 layer.bindPopup(`
-                  <div style="color: ${feature?.properties?.color ? `${feature.properties.color.trim()}` :  "var(--color-primary)"}; font-weight: bold">${feature.properties.nombre}</div>
-                  <div style="color: ${feature?.properties?.color ? `${feature.properties.color.trim()}` :  "var(--color-primary)"}; font-size: small">${feature.properties.municipio ?? ""}</div>
+                  <a style="color: ${feature?.properties?.color ? `${feature.properties.color.trim()}` : "var(--color-primary)"}; font-weight: bold" href="/comunidades/${feature.properties.id}">${feature.properties.nombre}</a>
+                  <div style="color: ${feature?.properties?.color ? `${feature.properties.color.trim()}` : "var(--color-primary)"}; font-size: small">${feature.properties.municipio ?? ""}</div>
                 `);
                 // Eventos de interacción
                 layer.on({

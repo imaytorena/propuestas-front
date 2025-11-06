@@ -7,8 +7,7 @@
     import {toPolygonFeatureFromAny} from '../../utils/geo'
 
     // Ruta y estado base
-    let comunidadId: string = ''
-
+    let comunidadId: string = $route.params.comunidadId
     let loading = $state(true)
     let error: string | null = $state(null)
     let comunidad: any = $state(null)
@@ -32,11 +31,6 @@
         const x = Number(n)
         if (!Number.isFinite(x)) return '—'
         return `${x.toFixed(1)} km`
-    }
-
-    function navigateToComunidad(id: any) {
-        if (!id) return
-        window.location.href = `/comunidades/${encodeURIComponent(id)}`
     }
 
     async function loadComunidad() {
@@ -77,21 +71,20 @@
             const {data} = await api.post(`/comunidades/recomendar`, payload)
             if (thisSeq !== loadSeq) return // abort if outdated
             const list: any[] = (data?.data ?? data ?? []) as any[]
-            resultados = list
-            // Mapear cada geometry a Feature para el mapa
-            const feats = list
-                .map((it: any) => {
-                    const f = toPolygonFeatureFromAny(it?.geometry ?? it, {
-                        id: it?.id ?? it?._id,
-                        nombre: it?.nombre ?? 'Comunidad',
-                        distKm: it?.distKm,
-                        coloniaId: it?.coloniaId ?? null,
-                        color: '#0ea5e9' // azul (distinguible de la base)
-                    })
-                    return f
+            resultFeatures = list.map((it: any, idx: number) => {
+                // El primer elemento representa la comunidad base según el backend
+                const isBase = idx === 0
+                const color = isBase ? '#111827' /* gris oscuro para la comunidad actual */ : '#0ea5e9' /* azul para recomendadas */
+                return toPolygonFeatureFromAny(it?.geometry ?? it, {
+                    id: it?.id ?? it?._id,
+                    nombre: it?.nombre ?? 'Comunidad',
+                    distKm: it?.distKm,
+                    coloniaId: it?.coloniaId ?? null,
+                    isBase,
+                    color
                 })
+            })
                 .filter(Boolean)
-            resultFeatures = feats
         } catch (e: any) {
             recomError = e?.message ?? 'Error cargando recomendaciones'
         } finally {
@@ -107,6 +100,12 @@
         loadRecomendaciones(loadSeq)
     }
 
+    onMount(() => {
+        loadComunidad().then(() => {
+            // Una vez que haya baseFeature, cargar recomendaciones
+            refreshRecs()
+        })
+    })
     // Cuando cambia el id de ruta, recargar comunidad y recomendaciones
     $effect(() => {
         const id = $route.params.comunidadId
@@ -117,17 +116,6 @@
                 refreshRecs()
             })
         }
-    })
-
-    onMount(async () => {
-        await loadComunidad()
-        await loadRecomendaciones(++loadSeq)
-    })
-
-    // Datos combinados para el mapa: primero la base (si existe), luego recomendadas
-    let allFeatures = $derived(() => {
-        const base = baseFeature ? [baseFeature] : []
-        return [...base, ...(Array.isArray(resultFeatures) ? resultFeatures : [])]
     })
 </script>
 
@@ -165,7 +153,9 @@
         <div class="card-body py-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div>
-                    <label class="label"><span class="label-text">Número de recomendaciones</span></label>
+                    <label class="label">
+                        <span class="label-text">Número de recomendaciones</span>
+                    </label>
                     <input type="range" min={K_MIN} max={K_MAX} step="1" bind:value={k} class="range range-primary"/>
                     <div class="mt-1 text-sm text-base-content/80">Mostrando: <span class="font-medium">{k}</span>
                         recomendaciones
@@ -186,7 +176,7 @@
     <!-- Mapa -->
     <div class="mb-6">
         <div class="w-full h-full rounded-lg border border-base-300 overflow-hidden">
-            <Map colonias={allFeatures} onColoniaClick={(props) => navigateToComunidad(props?.id)}/>
+            <Map colonias={resultFeatures ?? []} onColoniaClick={(props) => console.log(props?.id)}/>
         </div>
     </div>
 
