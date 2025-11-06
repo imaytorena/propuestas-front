@@ -116,9 +116,6 @@
       <div class="space-y-6">
         {#each groupByDate(interesados) as [fecha, propuestasPorFecha]}
           <div class="space-y-3">
-            <h3 class="text-lg font-medium text-info capitalize">
-              {formatDate(fecha)}
-            </h3>
             <div class="space-y-2">
               {#each propuestasPorFecha as propuesta}
                 <div class="card bg-base-100 border border-info/20 hover:shadow-md transition-shadow">

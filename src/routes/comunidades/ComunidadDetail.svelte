@@ -5,21 +5,56 @@
     import Map from '../../lib/components/Map.svelte'
     import {toPolygonFeatureFromAny} from '../../utils/geo'
 
-    let comunidadId: string = ''
+    let comunidadId: string = $state('')
     let loading = $state(true)
     let error: string | null = $state(null)
     let comunidad: any = $state(null)
 
     // Usuario actual y membresía
-    let me: any = $state(null)
     let joining = $state(false)
     let joinError: string | null = $state(null)
-    let isMember = $state(false)
-
+    // Flag explícita para mostrar el botón "Unirme" (si el backend la provee o si la calculamos aquí)
+    let puedeUnirse: boolean = $state(false)
+    let esMiembro = $state(false)
+    let esCreador = $state(false)
+    let miembros: any[] = $state([])
     // Propuestas relacionadas
     let propuestas: any[] = $state([])
     let loadingPropuestas = $state(false)
     let propuestasError: string | null = $state(null)
+
+    // Miembros (para render detallado)
+    let showAllMembers = $state(false)
+
+    function normalizeMiembros(src: any): any[] {
+        if (!src) return []
+        if (Array.isArray(src)) return src
+        if (typeof src === 'object') {
+            return Object.values(src).filter(v => v && typeof v === 'object') as any[]
+        }
+        return []
+    }
+
+    function miembroNombre(m: any): string {
+        const c = m?.cuenta ?? {}
+        return c?.nombre || [c?.nombre, c?.apellido].filter(Boolean).join(' ') || c?.identificador || c?.username || c?.correo || `Usuario ${m?.cuentaId ?? ''}`
+    }
+
+    function miembroCorreo(m: any): string {
+        return m?.cuenta?.correo || m?.correo || ''
+    }
+
+    function miembroInicial(m: any): string {
+        const name = miembroNombre(m)
+        return (name?.trim()?.charAt(0)?.toUpperCase()) || 'U'
+    }
+
+    function toYMD(input: any): string {
+        if (!input) return ''
+        const d = new Date(input)
+        if (isNaN(d.getTime())) return ''
+        return d.toISOString().split('T')[0]
+    }
 
     // GeoJSON features para el mapa (formato "antiguo" [[[lng,lat],...]])
     let features: any[] = $state([])
@@ -52,28 +87,6 @@
         return String(ax ?? '') === String(bx ?? '')
     }
 
-    async function loadMe() {
-        try {
-            const {data} = await api.get('/usuarios/me')
-            me = (data as any)?.data ?? data
-        } catch {
-            me = null
-        }
-    }
-
-    function computeMembership() {
-        try {
-            const members = (comunidad?.miembros ?? comunidad?.members ?? comunidad?.usuarios ?? []) as any[]
-            if (Array.isArray(members) && me) {
-                isMember = members.some(m => sameId(m?.id ?? m?.usuarioId ?? m?.cuentaId ?? m?.userId, me?.id))
-            } else {
-                isMember = false
-            }
-        } catch {
-            isMember = false
-        }
-    }
-
     async function joinCommunity() {
         if (!comunidadId) return
         joining = true
@@ -81,7 +94,7 @@
         try {
             // Intento 1: endpoint join directo
             try {
-                await api.post(`/comunidades/${comunidadId}/join`, {})
+                await api.post(`/comunidades/${comunidadId}/unirse`, {})
             } catch (e) {
                 // Intento 2: crear miembro
                 await api.post(`/comunidades/${comunidadId}/miembros`, {})
@@ -126,9 +139,12 @@
             // Desempaqueta payloads tipo { data: comunidad } o usa plano
             comunidad = (data as any)?.data ?? data
             features = comunidadToFeatures(comunidad)
-            computeMembership()
+            miembros = (comunidad?.miembros ?? []) as any[]
             // Cargar propuestas relacionadas en paralelo (no bloquear)
-            loadPropuestasRelacionadas()
+            puedeUnirse = comunidad.puedeUnirse ?? false
+            esMiembro = comunidad.esMiembro ?? false
+            esCreador = comunidad.esCreador ?? false
+            await loadPropuestasRelacionadas()
         } catch (e: any) {
             error = e?.message ?? 'Error cargando comunidad'
         } finally {
@@ -141,16 +157,10 @@
         const id = $route.params.comunidadId
         if (id !== comunidadId) {
             comunidadId = id
-            loadMe()
             loadComunidad()
         }
     })
 
-    // Reconstruye features cuando cambie la comunidad (por si llega tarde)
-    $effect(() => {
-        features = comunidadToFeatures(comunidad)
-        computeMembership()
-    })
 </script>
 
 <section aria-labelledby="comunidad-heading" class="mx-auto max-w-3xl px-4 py-4 sm:py-6">
@@ -201,13 +211,13 @@
                 </div>
             {/if}
 
-            {#if me && !isMember && !(comunidad.creador && (comunidad.creador.id === me?.id))}
+            {#if puedeUnirse}
                 <button class="btn btn-sm btn-primary text-white" onclick={joinCommunity} disabled={joining}
                         aria-label="Unirme a esta comunidad">
                     {joining ? 'Uniendo…' : 'Unirme a esta comunidad'}
                 </button>
-            {:else if me && isMember}
-                <span class="badge badge-success badge-outline">Miembro</span>
+            {:else if esMiembro || esCreador}
+                <span class="badge badge-success badge-outline">{`${esMiembro ? "Miembro" : "Creador"}`}</span>
             {/if}
         </div>
         {#if joinError}
@@ -258,49 +268,100 @@
                 </div>
             </div>
 
-            <!-- Propuestas relacionadas -->
+            <!-- Miembros de la comunidad (colapsable) -->
             <div class="not-prose mt-6">
-                <h2 class="text-xl font-semibold mb-3">Propuestas relacionadas</h2>
-                {#if loadingPropuestas}
-                    <div class="text-sm text-base-content/60">Cargando propuestas…</div>
-                {:else if propuestasError}
-                    <div role="alert" class="alert alert-error"><span>{propuestasError}</span></div>
-                {:else if !propuestas || propuestas.length === 0}
-                    <div class="text-sm text-base-content/60">No hay propuestas en esta comunidad todavía.</div>
-                {:else}
-                    <ul class="space-y-3">
-                        {#each propuestas as p}
-                            {@const pid = p?.id ?? p?._id}
-                            <li class="card bg-base-100 border border-base-300">
-                                <div class="card-body py-3">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div>
-                                            <a href={`/propuestas/${pid}`} onclick={goto}
-                                               class="link link-primary font-medium break-all">{p?.titulo ?? p?.title ?? `Propuesta ${pid}`}</a>
-                                            {#if p?.actividades}
-                                                {@const
-                                                    acts = Array.isArray(p.actividades) ? p.actividades : Object.values(p.actividades ?? {})}
-                                                {#if acts && acts.length}
-                                                    <ul class="mt-2 space-y-1 text-sm text-base-content/80">
-                                                        {#each acts as a}
-                                                            <li class="flex items-center gap-2">
-                                                                <span class="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
-                                                                <span class="break-all">{a?.nombre ?? a?.title ?? 'Actividad'}
-                                                                    {#if a?.fecha} — {new Date(a.fecha).toLocaleDateString('es-MX')}{/if}
-                                                                    {#if a?.horario} {a.horario}{/if}</span>
-                                                            </li>
-                                                        {/each}
-                                                    </ul>
-                                                {/if}
-                                            {/if}
-                                        </div>
-                                        <a href={`/propuestas/${pid}`} onclick={goto} class="btn btn-sm">Ver</a>
+                <details open>
+                    <summary class="text-xl font-semibold mb-3 cursor-pointer select-none">
+                        Miembros de la comunidad
+                        {#if miembros && miembros.length}({miembros.length}){/if}
+                    </summary>
+                    {#if !miembros || miembros.length === 0}
+                        <div class="text-sm text-base-content/60">Sin miembros aún.</div>
+                    {:else}
+                        <div class="space-y-2">
+                            {#each (showAllMembers ? miembros : miembros.slice(0, 10)) as m}
+                                <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-base-300">
+                                    <div class="flex-shrink-0 w-9 h-9 rounded-full bg-primary text-primary-content flex items-center justify-center font-semibold">
+                                        {miembroInicial(m)}
                                     </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium break-all">{miembroNombre(m)}</p>
+                                        {#if miembroCorreo(m)}
+                                            <p class="text-sm text-base-content/70 break-all">{miembroCorreo(m)}</p>
+                                        {/if}
+                                        {#if m?.createdAt}
+                                            <p class="text-xs text-base-content/60">Desde {toYMD(m.createdAt)}</p>
+                                        {/if}
+                                    </div>
+                                    {#if m?.isActive}
+                                        <span class="badge badge-success badge-sm">Activo</span>
+                                    {:else}
+                                        <span class="badge badge-ghost badge-sm">Invitado</span>
+                                    {/if}
                                 </div>
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
+                            {/each}
+                            {#if miembros.length > 10 && !showAllMembers}
+                                <button class="btn btn-outline btn-sm" onclick={() => showAllMembers = true}>
+                                    Ver más ({miembros.length - 10} más)
+                                </button>
+                            {:else if showAllMembers && miembros.length > 10}
+                                <button class="btn btn-outline btn-sm" onclick={() => showAllMembers = false}>
+                                    Ver menos
+                                </button>
+                            {/if}
+                        </div>
+                    {/if}
+                </details>
+            </div>
+
+            <!-- Propuestas relacionadas (colapsable) -->
+            <div class="not-prose mt-6">
+                <details open>
+                    <summary class="text-xl font-semibold mb-3 cursor-pointer select-none">
+                        Propuestas relacionadas
+                        {#if propuestas && propuestas.length}({propuestas.length}){/if}
+                    </summary>
+                    {#if loadingPropuestas}
+                        <div class="text-sm text-base-content/60">Cargando propuestas…</div>
+                    {:else if propuestasError}
+                        <div role="alert" class="alert alert-error"><span>{propuestasError}</span></div>
+                    {:else if !propuestas || propuestas.length === 0}
+                        <div class="text-sm text-base-content/60">No hay propuestas en esta comunidad todavía.</div>
+                    {:else}
+                        <ul class="space-y-3">
+                            {#each propuestas as p}
+                                {@const pid = p?.id ?? p?._id}
+                                <li class="card bg-base-100 border border-base-300">
+                                    <div class="card-body py-3">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <a href={`/propuestas/${pid}`} onclick={goto}
+                                                   class="link link-primary font-medium break-all">{p?.titulo ?? p?.title ?? `Propuesta ${pid}`}</a>
+                                                {#if p?.actividades}
+                                                    {@const
+                                                        acts = Array.isArray(p.actividades) ? p.actividades : Object.values(p.actividades ?? {})}
+                                                    {#if acts && acts.length}
+                                                        <ul class="mt-2 space-y-1 text-sm text-base-content/80">
+                                                            {#each acts as a}
+                                                                <li class="flex items-center gap-2">
+                                                                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                                                    <span class="break-all">{a?.nombre ?? a?.title ?? 'Actividad'}
+                                                                        {#if a?.fecha} — {new Date(a.fecha).toLocaleDateString('es-MX')}{/if}
+                                                                        {#if a?.horario} {a.horario}{/if}</span>
+                                                                </li>
+                                                            {/each}
+                                                        </ul>
+                                                    {/if}
+                                                {/if}
+                                            </div>
+                                            <a href={`/propuestas/${pid}`} onclick={goto} class="btn btn-sm">Ver</a>
+                                        </div>
+                                    </div>
+                                </li>
+                            {/each}
+                        </ul>
+                    {/if}
+                </details>
             </div>
         </article>
     {/if}

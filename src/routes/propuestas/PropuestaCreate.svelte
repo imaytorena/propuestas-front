@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from 'svelte'
     import page from 'page'
     import {goto} from '../../utils/nav'
     import api from '../../utils/api'
@@ -53,6 +54,36 @@
             return []
         } finally {
             loadingComunidades = false
+        }
+    }
+
+    // Prefill desde idea si viene ?fromIdea=ID
+    async function prefillFromIdea() {
+        try {
+            const params = new URLSearchParams(window.location.search)
+            const fromIdea = params.get('fromIdea')
+            if (!fromIdea) return
+            const { data } = await api.get(`/ideas/${encodeURIComponent(fromIdea)}`)
+            const idea: any = (data as any)?.data ?? data
+            // Prefill título y descripción
+            title = idea?.titulo ?? idea?.title ?? ''
+            descripcion = idea?.descripcion ?? idea?.description ?? ''
+            // Prefill comunidad si existe
+            const c = idea?.comunidad ?? idea?.community
+            const cId = idea?.comunidadId ?? idea?.communityId ?? c?.id
+            if (cId) {
+                const nombre = c?.nombre ?? c?.name ?? `Comunidad ${cId}`
+                const municipio = c?.municipio ?? c?.city ?? c?.municipality
+                const label = `${nombre}${municipio ? ` (${municipio})` : ''}`
+                const option: ComunidadOption = { id: cId, label, value: { nombre, municipio } }
+                selectedComunidad = option
+                // Asegurar que el valor exista en items del select
+                if (!comunidades.some(o => o.id === cId)) {
+                    comunidades = [option, ...comunidades]
+                }
+            }
+        } catch (e) {
+            console.warn('No se pudo precargar desde la idea', e)
         }
     }
 
@@ -117,6 +148,10 @@
             saving = false
         }
     }
+
+    onMount(() => {
+        prefillFromIdea()
+    })
 </script>
 
 <section aria-labelledby="create-propuesta-heading" class="mx-auto max-w-3xl px-4 py-4 sm:py-6">

@@ -27,13 +27,13 @@
     };
 
     async function generarPropuestas() {
+        // Redirige a la creación de propuesta con datos precargados desde la idea
         try {
             generating = true;
-            const {data} = await api.post(`/ideas/${idea.id}/generar-propuesta`, idea)
-            toast.push('Propuesta generada');
-            page.show(`/propuestas/${data.id}`)
+            const url = `/propuestas/crear?fromIdea=${encodeURIComponent(idea?.id)}`;
+            page.show(url);
         } catch (e) {
-            console.error('Error generando propuestas', e);
+            console.error('Error al redirigir a crear propuesta', e);
         } finally {
             generating = false;
         }

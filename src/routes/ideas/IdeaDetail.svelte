@@ -61,6 +61,12 @@
       </h1>
       <nav class="flex items-center gap-2">
         <a
+          class="btn btn-secondary btn-sm text-white"
+          href={`/propuestas/crear?fromIdea=${ideaId}`}
+          onclick={goto}
+          aria-label="Crear propuesta desde esta idea"
+        >Crear propuesta</a>
+        <a
           class="btn btn-primary btn-sm text-white"
           href={`/ideas/${ideaId}/editar`}
           onclick={goto}

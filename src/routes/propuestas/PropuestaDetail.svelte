@@ -54,6 +54,69 @@
     }
   }
 
+  // Utilities for activities: dates, time and status
+  function pickActDateRaw(a: any): any {
+    return a?.fecha ?? a?.date ?? a?.fechaActividad ?? a?.activityDate ?? null
+  }
+  function pickActTimeRaw(a: any): any {
+    return a?.horario ?? a?.hora ?? a?.time ?? a?.horaActividad ?? a?.activityTime ?? ''
+  }
+  function toYMD(input: any): string {
+    if (!input) return ''
+    const d = new Date(input)
+    if (isNaN(d.getTime())) return ''
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+  function toHHmm(input: any): string {
+    if (!input) return ''
+    const s = String(input)
+    const m = s.match(/^(\d{1,2}):(\d{2})/)
+    if (!m) return ''
+    const hh = m[1].padStart(2, '0')
+    const mm = m[2]
+    return `${hh}:${mm}`
+  }
+  function formatDateHuman(input: any): string {
+    if (!input) return 'Sin fecha'
+    const d = new Date(input)
+    if (isNaN(d.getTime())) return 'Fecha inválida'
+    try {
+      return d.toLocaleDateString('es-MX', { dateStyle: 'medium' } as any)
+    } catch {
+      // Fallback
+      return toYMD(d)
+    }
+  }
+  function todayYMD(): string {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+  function actStatus(a: any): { label: string; cls: string } {
+    const raw = pickActDateRaw(a)
+    const ymd = toYMD(raw)
+    if (!ymd) return { label: 'Sin fecha', cls: 'badge-ghost' }
+    const today = todayYMD()
+    if (ymd === today) return { label: 'Hoy', cls: 'badge-warning' }
+    if (ymd > today) return { label: 'Próximamente', cls: 'badge-info' }
+    return { label: 'Finalizada', cls: 'badge-ghost' }
+  }
+  function sortActsByDate(arr: any[]): any[] {
+    return (arr ?? []).slice().sort((a: any, b: any) => {
+      const ad = toYMD(pickActDateRaw(a))
+      const bd = toYMD(pickActDateRaw(b))
+      if (!ad && !bd) return 0
+      if (!ad) return 1
+      if (!bd) return -1
+      return ad.localeCompare(bd)
+    })
+  }
+
   $effect(() => {
     const id = $route.params.propuestaId
     if (id !== propuestaId) {
@@ -167,15 +230,20 @@
     {#if propuesta.actividades}
       {@const acts = Array.isArray(propuesta.actividades) ? propuesta.actividades : Object.values(propuesta.actividades ?? {})}
       {#if acts.length > 0}
-        <section class="mt-8">
-          <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+        <details class="mt-8" open>
+          <summary class="text-xl font-semibold mb-4 flex items-center gap-2 cursor-pointer select-none">
             <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
             </svg>
-            Actividades a realizar
-          </h2>
-          <div class="grid gap-4">
-            {#each acts as actividad, index}
+            Actividades a realizar ({acts.length})
+          </summary>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {#each sortActsByDate(acts) as actividad, index}
+              {@const dRaw = pickActDateRaw(actividad)}
+              {@const tRaw = pickActTimeRaw(actividad)}
+              {@const ymd = toYMD(dRaw)}
+              {@const hhmm = toHHmm(tRaw)}
+              {@const st = actStatus(actividad)}
               <div class="card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
                 <div class="card-body p-4">
                   <div class="flex items-start gap-3">
@@ -183,7 +251,18 @@
                       {index + 1}
                     </div>
                     <div class="flex-1 min-w-0">
-                      <h3 class="font-semibold text-lg mb-2 text-primary break-all">{actividad.nombre ?? actividad.title}</h3>
+                      <div class="flex items-center justify-between gap-2 mb-1">
+                        <h3 class="font-semibold text-lg text-primary break-all">{actividad.nombre ?? actividad.title}</h3>
+                        <span class={`badge badge-sm ${st.cls}`}>{st.label}</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-sm text-base-content/70 mb-2">
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span>
+                          {ymd ? formatDateHuman(dRaw) : 'Sin fecha'}{#if hhmm} · {hhmm}{/if}
+                        </span>
+                      </div>
                       <p class="text-base-content/80 leading-relaxed break-all whitespace-pre-wrap">{actividad.descripcion ?? actividad.description}</p>
                     </div>
                   </div>
@@ -191,7 +270,7 @@
               </div>
             {/each}
           </div>
-        </section>
+        </details>
       {/if}
     {/if}
 
@@ -202,13 +281,13 @@
       <div class="mt-8 space-y-8">
         <!-- Asistentes confirmados -->
         {#if asistentes.length > 0}
-          <section>
-            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+          <details>
+            <summary class="text-xl font-semibold mb-4 flex items-center gap-2 cursor-pointer select-none">
               <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
               Asistentes confirmados ({asistentes.length})
-            </h2>
+            </summary>
             <div class="space-y-3">
               {#each (showAllAttendees ? asistentes : asistentes.slice(0, 5)) as asistente}
                 <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-success/20">
@@ -234,18 +313,18 @@
                 </button>
               {/if}
             </div>
-          </section>
+          </details>
         {/if}
 
         <!-- Interesados -->
         {#if interesados.length > 0}
-          <section>
-            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+          <details>
+            <summary class="text-xl font-semibold mb-4 flex items-center gap-2 cursor-pointer select-none">
               <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
               </svg>
               Interesados ({interesados.length})
-            </h2>
+            </summary>
             <div class="space-y-3">
               {#each (showAllInterested ? interesados : interesados.slice(0, 5)) as interesado}
                 <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-info/20">
@@ -271,7 +350,7 @@
                 </button>
               {/if}
             </div>
-          </section>
+          </details>
         {/if}
       </div>
     {/if}

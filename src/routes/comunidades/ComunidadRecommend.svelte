@@ -20,9 +20,9 @@
     let resultFeatures: any[] = $state([])
 
     // Slider para cantidad de recomendaciones (5..15)
-    let k = $state(10)
+    let k = $state(20)
     const K_MIN = 5
-    const K_MAX = 15
+    const K_MAX = 35
 
     // Control para evitar condiciones de carrera al recargar recomendaciones
     let loadSeq = $state(0)

@@ -156,35 +156,44 @@
 
     <div class="space-y-14">
         {#each sections as section}
-            <section class="space-y-4">
-                <div class="flex items-end justify-between gap-4">
-                    <div>
-                        <a class="" href={section.cta?.href}>
-                            <h2 class="link link-sm text-2xl font-semibold">{section.title}</h2>
+            <section class="space-y-2">
+                <details open>
+                    <summary class="flex items-end justify-between gap-4 cursor-pointer select-none">
+                        <div>
+                            <h2 class="text-2xl font-semibold">
+                                <span class="link link-sm">{section.title}</span>
+                                {#if section.items && section.items.length}
+                                    <span class="ml-2 text-sm text-base-content/60">({section.items.length})</span>
+                                {/if}
+                            </h2>
                             <p class="text-base-content/70">{section.description}</p>
-                        </a>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {#each section.items as item}
-                        <article class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
-                            {#if item.image}
-                                <figure class="aspect-[16/9] overflow-hidden">
-                                    <img src={item.image} alt={item.titulo} class="w-full h-full object-cover"
-                                         loading="lazy"/>
-                                </figure>
-                            {/if}
-                            <div class="card-body flex flex-col gap-4 p-4">
-                                <span class="badge badge-outline badge-primary text-xs self-end">{section.title}</span>
-                                <h3 class="card-title text-lg">{item.titulo ?? item.nombre}</h3>
-                                <p class="text-sm text-base-content/70">{item.descripcion}</p>
-                                <div class="card-actions justify-end mt-2">
-                                    <a href={"/"+section.key+"/"+item.id} class="btn btn-sm btn-primary">Ver más</a>
+                        </div>
+                        {#if section.cta?.href}
+                            <a class="btn btn-ghost btn-sm" href={section.cta.href}>Ver todas</a>
+                        {/if}
+                    </summary>
+
+                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {#each section.items as item}
+                            <article class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+                                {#if item.image}
+                                    <figure class="aspect-[16/9] overflow-hidden">
+                                        <img src={item.image} alt={item.titulo} class="w-full h-full object-cover"
+                                             loading="lazy"/>
+                                    </figure>
+                                {/if}
+                                <div class="card-body flex flex-col gap-4 p-4">
+                                    <span class="badge badge-outline badge-primary text-xs self-end">{section.title}</span>
+                                    <h3 class="card-title text-lg">{item.titulo ?? item.nombre}</h3>
+                                    <p class="text-sm text-base-content/70">{item.descripcion}</p>
+                                    <div class="card-actions justify-end mt-2">
+                                        <a href={"/"+section.key+"/"+item.id} class="btn btn-sm btn-primary">Ver más</a>
+                                    </div>
                                 </div>
-                            </div>
-                        </article>
-                    {/each}
-                </div>
+                            </article>
+                        {/each}
+                    </div>
+                </details>
             </section>
         {/each}
     </div>
