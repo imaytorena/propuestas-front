@@ -36,8 +36,8 @@
         'Sociedad',
     ];
     const categoriaColor: Record<string, string> = {
-        'Vecinos': '#2563eb',
-        'Estudiantes': '#16a34a',
+        'Vecinos': '#16a34a',
+        'Estudiantes': '#2563eb',
         'Madres y padres de familia': '#f59e0b',
         'Personas mayores': '#ef4444',
         'Pueblos originarios': '#a855f7',
