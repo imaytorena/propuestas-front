@@ -303,11 +303,11 @@
       </div>
     </div>
 
-    <div class="mt-8">
-      <PropuestasSuscritas 
-        propuestaIdsAsistire={me.propuestaIdsAsistire || []} 
-        propuestasInteres={me.propuestasInteres || []} 
-      />
-    </div>
+<!--    <div class="mt-8">-->
+<!--      <PropuestasSuscritas -->
+<!--        propuestaIdsAsistire={me.propuestaIdsAsistire || []} -->
+<!--        propuestasInteres={me.propuestasInteres || []} -->
+<!--      />-->
+<!--    </div>-->
   {/if}
 </section>

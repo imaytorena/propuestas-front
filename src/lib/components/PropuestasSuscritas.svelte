@@ -56,9 +56,6 @@
       <div class="space-y-6">
         {#each groupByDate(asistire) as [fecha, propuestasPorFecha]}
           <div class="space-y-3">
-            <h3 class="text-lg font-medium text-success capitalize">
-              {formatDate(fecha)}
-            </h3>
             <div class="space-y-2">
               {#each propuestasPorFecha as propuesta}
                 <div class="card bg-base-100 border border-success/20 hover:shadow-md transition-shadow">
@@ -80,7 +77,7 @@
                           <span class="badge badge-success badge-sm">Asistiré</span>
                         </div>
                       </div>
-                      <button 
+                      <button
                         class="btn btn-success btn-sm"
                         onclick={() => window.location.href = `/propuestas/${propuesta.id}`}
                       >
