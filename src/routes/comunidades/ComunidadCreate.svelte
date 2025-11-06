@@ -203,7 +203,7 @@
             const id = created?.id
             toast.success('Comunidad creada')
             if (id) {
-                page.show(`/comunidades/${id}`)
+                page.show(`/comunidades/${id}/recomendar`)
             } else {
                 page.show('/comunidades')
             }

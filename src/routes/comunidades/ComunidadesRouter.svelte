@@ -4,6 +4,7 @@
   import ComunidadDetail from './ComunidadDetail.svelte';
   import ComunidadEdit from './ComunidadEdit.svelte';
   import ComunidadCreate from './ComunidadCreate.svelte';
+  import ComunidadRecommend from './ComunidadRecommend.svelte';
 </script>
 
 {#if $route.name === 'comunidad-crear'}
@@ -12,6 +13,8 @@
   <ComunidadDetail/>
 {:else if $route.name === 'comunidad-editar'}
   <ComunidadEdit/>
+{:else if $route.name === 'comunidad-recomendar'}
+  <ComunidadRecommend/>
 {:else}
   <ComunidadesList/>
 {/if}

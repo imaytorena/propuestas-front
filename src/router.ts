@@ -9,7 +9,7 @@ export type RouteName = 'inicio' | 'participacion' |
     'ideas' | 'idea-crear' | 'idea-detalle' | 'idea-editar' |
     'propuestas' | 'propuesta-crear' | 'propuesta-detalle' | 'propuesta-editar' |
     'actividades' | 'actividad-crear' | 'actividad-detalle' | 'actividad-editar' |
-    'comunidades' | 'comunidad-crear' | 'comunidad-detalle' | 'comunidad-editar';
+    'comunidades' | 'comunidad-crear' | 'comunidad-detalle' | 'comunidad-editar' | 'comunidad-recomendar';
 
 export interface RouteState {
     name: RouteName
@@ -55,6 +55,7 @@ export async function initRouter() {
     page('/comunidades/crear', (ctx: any) => setRoute('comunidad-crear', ctx))
     page('/comunidades/:comunidadId', (ctx: any) => setRoute('comunidad-detalle', ctx))
     page('/comunidades/:comunidadId/editar', (ctx: any) => setRoute('comunidad-editar', ctx))
+    page('/comunidades/:comunidadId/recomendar', (ctx: any) => setRoute('comunidad-recomendar', ctx))
     // Auth
     page('/auth/login', (ctx: any) => setRoute('auth-login', ctx))
     page('/auth/registrar', (ctx: any) => setRoute('auth-registrar', ctx))
