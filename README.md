@@ -1,73 +1,153 @@
-# Svelte + TS + Vite
+# QCI Front — Svelte + TS + Vite
 
-## Docker
+Este repositorio contiene el frontend de QCI construido con Svelte 5, Vite y TypeScript. A continuación se documenta cómo iniciar el proyecto en desarrollo (con y sin Docker), cómo configurar variables de entorno, cómo preparar un despliegue, y las principales rutas de la aplicación (SPA con page.js).
 
-This project includes a Docker setup that attaches to an external Docker network named `qci`. The frontend is served using Vite's preview server inside the container (no Nginx).
+## Requisitos
 
-- Network: `qci` (must exist: create it once with `docker network create qci`)
-- Frontend image: `qci-front`
-- Exposed port: `5173` (mapped to container port `5173`)
-- API base (optional): the app can target `/api` and you can wire it in your backend or proxy layer as needed.
+- Node.js 20+ (se recomienda 22) y npm
+- Docker 24+ y Docker Compose (solo si usarás ejecución con Docker)
 
-### Commands
+## Variables de entorno
 
-- Build and run:
-  - `docker network create qci` (only once if it does not exist)
-  - `docker compose up --build`
-- Open: http://localhost:5173
-- API esperado: http://localhost:3000 (endpoint /ideas para listado y /ideas/:id para detalle). Puedes cambiar el destino con la variable VITE_API_BASE.
+La aplicación consume una API externa. Configura la URL base con la variable `VITE_API_BASE`.
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+- Ejemplo (API local): `VITE_API_BASE=http://localhost:3000`
+- Dónde definirla:
+  - Sin Docker: crea un archivo `.env` en la raíz o exporta la variable en tu shell antes de ejecutar Vite. Los prefijos `VITE_` son leídos por Vite en tiempo de dev/compilación.
+  - Con Docker: ya está mapeada en `docker-compose.yml` y se pasa al contenedor.
 
-## Rutas (page.js)
+## Desarrollo SIN Docker
 
-Se añadieron rutas de SPA con page.js:
-- /ideas
-- /ideas/:ideaId
-- /ideas/:ideaId/editar
+1. Instala dependencias:
+   ```bash
+   npm install
+   ```
+2. Inicia el servidor de desarrollo en tu red local:
+   ```bash
+   npm run dev
+   ```
+   - La app quedará disponible en http://localhost:5173
+   - Si necesitas exponerla a la LAN, usa `npm run dev -- --host`
+3. Asegúrate de que tu backend esté accesible en la URL definida por `VITE_API_BASE`.
 
-Navega usando los enlaces del encabezado. También puedes entrar directamente a las rutas; Vite dev/preview aplica fallback a index.html.
+## Desarrollo CON Docker
 
-## Recommended IDE Setup
+Este proyecto incluye un entorno Docker que ejecuta el servidor de desarrollo de Vite dentro del contenedor.
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+- Red externa requerida: `qci` (debe existir antes de levantar los servicios).
+- Imagen/servicio: `qci-front`
+- Puerto expuesto: `5173` (host) → `5173` (contenedor)
 
-## Need an official Svelte framework?
+Pasos:
+1. Crear la red (solo una vez):
+   ```bash
+   docker network create qci
+   ```
+2. Levantar el contenedor (con build):
+   ```bash
+   docker compose up --build
+   ```
+3. Abrir la app: http://localhost:5173
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+Notas:
+- El `docker-compose.yml` fija `platform: linux/amd64`. Si no la necesitas (p. ej., en Linux nativo), puedes comentarla.
+- Dentro del contenedor se ejecuta `npm run dev --host`. El script `docker/start` instalará dependencias la primera vez.
+- Define `VITE_API_BASE` en tu entorno o en un archivo `.env` para que Compose lo inyecte al contenedor.
 
-## Technical considerations
+## Despliegue (Build de producción)
 
-**Why use this over SvelteKit?**
+Este proyecto es una SPA que se construye a estáticos en `dist/`. Opciones para desplegar:
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+1) Build local y servir estáticos con tu servidor (Nginx, Apache, Caddy, etc.):
+   ```bash
+   npm ci
+   npm run build
+   # Carpeta de salida: dist/
+   ```
+   - Copia el contenido de `dist/` a tu servidor web.
+   - Asegura fallback a `index.html` para todas las rutas (SPA). En Nginx, por ejemplo:
+     ```nginx
+     location / {
+       try_files $uri /index.html;
+     }
+     ```
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+2) Previsualizar el build localmente:
+   ```bash
+   npm run preview
+   # por defecto en http://localhost:4173
+   ```
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+3) Plataformas de hosting estático (Netlify, Vercel, GitHub Pages, Cloudflare Pages):
+   - Comando de build: `npm run build`
+   - Directorio de publicación: `dist`
+   - Si necesitas reescrituras para SPA, configura el fallback a `index.html`.
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+4) Docker (opcional) para producción:
+   - Actualmente el Dockerfile ejecuta un entorno de desarrollo. Para prod, se recomienda construir con `npm run build` y servir `dist/` con un servidor estático (p. ej., Nginx) en una imagen separada. Ejemplo de multi-stage (referencia):
+     ```Dockerfile
+     FROM node:22-alpine AS build
+     WORKDIR /app
+     COPY package*.json ./
+     RUN npm ci
+     COPY . .
+     RUN npm run build
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+     FROM nginx:alpine
+     COPY --from=build /app/dist /usr/share/nginx/html
+     # Fallback SPA
+     RUN printf "server {\n  listen 80;\n  location / {\n    try_files \\$uri /index.html;\n  }\n}\n" > /etc/nginx/conf.d/default.conf
+     ```
 
-**Why include `.vscode/extensions.json`?**
+## Principales rutas de la app
 
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
+La navegación se maneja con `page.js` en `src/router.ts`. Rutas disponibles:
 
-**Why enable `allowJs` in the TS template?**
+- Inicio: `/`
+- Participación: `/participacion`
 
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
+- Ideas:
+  - Listado: `/ideas`
+  - Crear: `/ideas/crear`
+  - Detalle: `/ideas/:ideaId`
+  - Editar: `/ideas/:ideaId/editar`
 
-**Why is HMR not preserving my local component state?**
+- Propuestas:
+  - Listado: `/propuestas`
+  - Crear: `/propuestas/crear` (requiere autenticación)
+  - Detalle: `/propuestas/:propuestaId`
+  - Editar: `/propuestas/:propuestaId/editar`
 
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
+- Actividades:
+  - Listado: `/actividades`
+  - Crear: `/actividades/crear` (requiere autenticación)
+  - Detalle: `/actividades/:actividadId`
+  - Editar: `/actividades/:actividadId/editar`
 
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
+- Comunidades:
+  - Listado: `/comunidades`
+  - Crear: `/comunidades/crear`
+  - Detalle: `/comunidades/:comunidadId`
+  - Editar: `/comunidades/:comunidadId/editar`
+  - Recomendar: `/comunidades/:comunidadId/recomendar`
 
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
-```
+- Usuario / Auth:
+  - Perfil: `/usuario`
+  - Editar perfil: `/usuario/editar`
+  - Login: `/auth/login`
+  - Registro: `/auth/registrar`
+
+## IDE recomendado
+
+- Visual Studio Code con la extensión oficial de Svelte: https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode
+
+## Notas útiles
+
+- Comandos npm:
+  - `npm run dev`: servidor de desarrollo Vite.
+  - `npm run build`: build de producción a `dist/`.
+  - `npm run preview`: vista previa local del build.
+  - `npm run check`: chequeos de tipos y Svelte.
+- Estilos: TailwindCSS 4 + DaisyUI.
+- Cliente HTTP: axios.
+- Si tu backend vive bajo el mismo dominio, puedes exponerlo como `/api` mediante un reverse proxy y fijar `VITE_API_BASE=/api`.
