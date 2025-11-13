@@ -18,8 +18,10 @@
   }
 
   function groupByDate(propuestas: any[]) {
+    if (!propuestas || propuestas.length === 0) return []
+    
     const grouped = propuestas.reduce((acc, propuesta) => {
-      const date = propuesta.fechaActividad
+      const date = propuesta.createdAt?.split('T')[0] || 'Sin fecha'
       if (!acc[date]) {
         acc[date] = []
       }
@@ -27,11 +29,15 @@
       return acc
     }, {})
     
-    return Object.entries(grouped).sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+    return Object.entries(grouped).sort(([a], [b]) => {
+      if (a === 'Sin fecha') return 1
+      if (b === 'Sin fecha') return -1
+      return new Date(a).getTime() - new Date(b).getTime()
+    })
   }
 
-  let asistire = $derived(propuestaIdsAsistire)
-  let interesados = $derived(propuestasInteres)
+  let asistire = $derived(propuestaIdsAsistire || [])
+  let interesados = $derived(propuestasInteres || [])
 
 
 </script>
@@ -63,17 +69,16 @@
                     <div class="flex items-center justify-between">
                       <div class="flex-1">
                         <h4 class="font-semibold text-base mb-1">
-                          {propuesta.title ?? propuesta.titulo ?? `Propuesta ${propuesta.id}`}
+                          {propuesta.titulo ?? propuesta.title ?? `Propuesta ${propuesta.id}`}
                         </h4>
+                        <p class="text-sm text-base-content/70 mb-2">{propuesta.descripcion ?? propuesta.description ?? ''}</p>
                         <div class="flex items-center gap-4 text-sm text-base-content/70">
-                          {#if propuesta.horaActividad}
-                            <span class="flex items-center gap-1">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                              </svg>
-                              {propuesta.horaActividad}
-                            </span>
-                          {/if}
+                          <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            {formatDate(propuesta.createdAt)}
+                          </span>
                           <span class="badge badge-success badge-sm">Asistiré</span>
                         </div>
                       </div>
@@ -120,17 +125,16 @@
                     <div class="flex items-center justify-between">
                       <div class="flex-1">
                         <h4 class="font-semibold text-base mb-1">
-                          {propuesta.title ?? propuesta.titulo ?? `Propuesta ${propuesta.id}`}
+                          {propuesta.titulo ?? propuesta.title ?? `Propuesta ${propuesta.id}`}
                         </h4>
+                        <p class="text-sm text-base-content/70 mb-2">{propuesta.descripcion ?? propuesta.description ?? ''}</p>
                         <div class="flex items-center gap-4 text-sm text-base-content/70">
-                          {#if propuesta.horaActividad}
-                            <span class="flex items-center gap-1">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                              </svg>
-                              {propuesta.horaActividad}
-                            </span>
-                          {/if}
+                          <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            {formatDate(propuesta.createdAt)}
+                          </span>
                           <span class="badge badge-info badge-sm">Me interesa</span>
                         </div>
                       </div>

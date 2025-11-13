@@ -12,11 +12,10 @@
   type ComunidadOption = { id: number; label: string; value: ComunidadValue }
 
   let propuestaId: string = ''
-  $: propuestaId = $route.params.propuestaId
-
   let title: string = ''
   let descripcion: string = ''
-  let actividades: Array<{ nombre: string, descripcion: string, fecha: string, horario?: string }> = []
+  let actividades: Array<{ id?: number, nombre: string, descripcion: string, fecha: string, horario?: string }> = []
+  let actividadesEliminadas: number[] = []
   let loading = true
   let saving = false
   let error: string | null = null
@@ -74,6 +73,10 @@
   // Get today's date in YYYY-MM-DD format for min attribute
   const today = new Date().toISOString().split('T')[0]
 
+  function handleActividadEliminada(id: number) {
+    actividadesEliminadas = [...actividadesEliminadas, id]
+  }
+
   function toYMD(input: any): string {
     if (!input) return ''
     const d = new Date(input)
@@ -88,12 +91,14 @@
     return m ? `${m[1]}:${m[2]}` : ''
   }
 
-  async function loadPropuesta() {
-    if (!propuestaId) return
+  async function loadPropuesta(id: string) {
+    if (!id) return
     loading = true
     error = null
+    loaded = false
+    actividadesEliminadas = []
     try {
-      const { data: p } = await api.get(`/propuestas/${propuestaId}`)
+      const { data: p } = await api.get(`/propuestas/${id}`)
       const pr: any = (p as any)?.data ?? p
       title = pr?.title ?? pr?.titulo ?? ''
       descripcion = pr?.description ?? pr?.descripcion ?? ''
@@ -109,6 +114,7 @@
           .map(([_, v]: any) => v)
       }
       actividades = actsArr.map((a: any) => ({
+        id: a?.id,
         nombre: a?.nombre ?? a?.title ?? '',
         descripcion: a?.descripcion ?? a?.description ?? '',
         fecha: toYMD(a?.fecha ?? a?.date ?? a?.fechaActividad ?? a?.activityDate),
@@ -136,7 +142,8 @@
 
   async function save(event: SubmitEvent & { currentTarget: EventTarget & HTMLFormElement }) {
     event.preventDefault()
-    if (!propuestaId) return
+    const currentId = $route.params.propuestaId
+    if (!currentId) return
     saveError = null
     if (!title.trim()) {
       saveError = 'El título es obligatorio'
@@ -174,10 +181,11 @@
         titulo: title,
         descripcion,
         comunidadId: selectedComunidad.id,
-        actividades
+        actividades,
+        actividadesEliminadas
       }
-      await api.put(`/propuestas/${propuestaId}`, payload)
-      page.show(`/propuestas/${propuestaId}`)
+      await api.put(`/propuestas/${currentId}`, payload)
+      page.show(`/propuestas/${currentId}`)
     } catch (e: any) {
       saveError = e?.message ?? 'No se pudo guardar'
     } finally {
@@ -185,7 +193,22 @@
     }
   }
 
-  onMount(loadPropuesta)
+  // Reactive statement to load proposal when route changes
+  $: {
+    const newId = $route.params.propuestaId
+    if (newId && newId !== propuestaId) {
+      propuestaId = newId
+      loadPropuesta(newId)
+    }
+  }
+
+  onMount(() => {
+    const id = $route.params.propuestaId
+    if (id) {
+      propuestaId = id
+      loadPropuesta(id)
+    }
+  })
 </script>
 
 <section aria-labelledby="edit-propuesta-heading" class="mx-auto max-w-3xl px-4 py-4 sm:py-6">
@@ -201,7 +224,7 @@
     <div role="alert" class="alert alert-error">
       <span>{error}</span>
       <div class="ml-auto">
-        <button class="btn btn-sm" onclick={loadPropuesta}>Reintentar</button>
+        <button class="btn btn-sm" onclick={() => loadPropuesta($route.params.propuestaId)}>Reintentar</button>
       </div>
     </div>
   {:else if !loaded}
@@ -211,8 +234,8 @@
     </div>
   {:else}
     <header class="mb-4 flex items-center justify-between gap-3">
-      <h1 id="edit-propuesta-heading" class="text-2xl font-semibold tracking-tight">Editar propuesta {propuestaId}</h1>
-      <a class="btn btn-ghost btn-sm" href={`/propuestas/${propuestaId}`} onclick={goto}>Cancelar</a>
+      <h1 id="edit-propuesta-heading" class="text-2xl font-semibold tracking-tight">Editar propuesta {$route.params.propuestaId}</h1>
+      <a class="btn btn-ghost btn-sm" href={`/propuestas/${$route.params.propuestaId}`} onclick={goto}>Cancelar</a>
     </header>
 
     <form class="space-y-4" onsubmit={save}>
@@ -270,7 +293,7 @@
         </div>
       </div>
 
-      <ActividadesForm bind:actividades />
+      <ActividadesForm bind:actividades onActividadEliminada={handleActividadEliminada} />
 
       {#if saveError}
         <div role="alert" class="alert alert-error" aria-live="polite">
@@ -279,7 +302,7 @@
       {/if}
 
       <div class="flex items-center justify-end gap-2">
-        <a class="btn btn-ghost" href={`/propuestas/${propuestaId}`} onclick={goto} type="button">Cancelar</a>
+        <a class="btn btn-ghost" href={`/propuestas/${$route.params.propuestaId}`} onclick={goto} type="button">Cancelar</a>
         <button class="btn btn-primary text-white" type="submit" disabled={saving}>
           {saving ? 'Guardando…' : 'Guardar'}
         </button>

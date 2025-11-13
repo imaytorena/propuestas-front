@@ -245,20 +245,6 @@
               />
             </div>
 
-            <div class="form-control">
-              <label class="label" for="codigo">
-                <span class="label-text">No. Cuenta</span>
-              </label>
-              <input
-                id="codigo"
-                class="input input-bordered"
-                type="text"
-                bind:value={editForm.codigo}
-                placeholder="Código opcional"
-                disabled={saving}
-              />
-            </div>
-
             {#if saveError}
               <div role="alert" class="alert alert-error">
                 <span>{saveError}</span>
@@ -290,11 +276,6 @@
             </div>
             
             <div class="stat bg-base-200 rounded-lg">
-              <div class="stat-title">No. Cuenta</div>
-              <div class="stat-value text-lg">{me.codigo || 'No asignado'}</div>
-            </div>
-            
-            <div class="stat bg-base-200 rounded-lg">
               <div class="stat-title">Estado</div>
               <div class="stat-value text-lg text-success">Activo</div>
             </div>
@@ -303,11 +284,11 @@
       </div>
     </div>
 
-<!--    <div class="mt-8">-->
-<!--      <PropuestasSuscritas -->
-<!--        propuestaIdsAsistire={me.propuestaIdsAsistire || []} -->
-<!--        propuestasInteres={me.propuestasInteres || []} -->
-<!--      />-->
-<!--    </div>-->
+    <div class="mt-8">
+      <PropuestasSuscritas
+        propuestaIdsAsistire={me.propuestasAsistire || []}
+        propuestasInteres={me.propuestasInteres || []}
+      />
+    </div>
   {/if}
 </section>
