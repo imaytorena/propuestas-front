@@ -15,7 +15,7 @@
 
     // Paginación (servidor)
     let page = $state(1)
-    let pageSize = $state(9)
+    let pageSize = $state(12)
     let total = $state(0)
     let pageCount = $state(1)
 
@@ -23,12 +23,8 @@
         loading = true
         error = null
         try {
-            const {data} = await api.get(`/comunidades/paginadas`, {
-                params: {page, limit: pageSize}
-            })
-            comunidades = data.data ?? []
-            total = data.meta?.total ?? comunidades.length
-            pageCount = data.meta?.pageCount ?? Math.max(1, Math.ceil(total / pageSize))
+            const {data} = await api.get(`/comunidades`)
+            comunidades = data ?? []
         } catch (e: any) {
             error = e?.message ?? 'Error cargando comunidades'
         } finally {
@@ -36,6 +32,7 @@
         }
     }
 
+    // Paginación local completa
     const filtered = $derived((comunidades ?? []).filter((c) => {
         if (!query) return true
         const q = query.toLowerCase().trim()
@@ -45,12 +42,17 @@
         )
     }))
 
-    // Totales basados en la meta de la API
-    const totalItems = $derived(total)
-    const totalPages = $derived(Math.max(1, pageCount))
+    const totalItems = $derived(filtered.length)
+    const totalPages = $derived(Math.max(1, Math.ceil(totalItems / pageSize)))
+    const visiblePages = $derived((() => {
+        const maxVisible = 8
+        if (totalPages <= maxVisible) return Array.from({length: totalPages}, (_, i) => i + 1)
+        const start = Math.max(1, Math.min(page - Math.floor(maxVisible / 2), totalPages - maxVisible + 1))
+        return Array.from({length: maxVisible}, (_, i) => start + i)
+    })())
     const startIndex = $derived((totalItems === 0) ? 0 : (page - 1) * pageSize)
     const endIndex = $derived(Math.min(page * pageSize, totalItems))
-    const pageItems = $derived(filtered)
+    const pageItems = $derived(filtered.slice(startIndex, endIndex))
 
     // Cambiar página dentro de los límites disponibles
     $effect(() => {
@@ -64,13 +66,8 @@
         page = 1
     })
 
-    // Cargar datos iniciales y cuando cambie la página o el tamaño de página
+    // Cargar datos solo una vez
     $effect.pre(() => {
-        loadComunidades()
-    })
-    $effect(() => {
-        void page
-        void pageSize
         loadComunidades()
     })
 </script>
@@ -157,21 +154,26 @@
 
         <nav class="mt-6 flex items-center justify-center" role="navigation" aria-label="Paginación">
             <div class="join">
+                <button class="btn btn-sm join-item" aria-label="Primera página" disabled={page === 1}
+                        onclick={() => (page = 1)}>««
+                </button>
                 <button class="btn btn-sm join-item" aria-label="Página anterior" disabled={page === 1}
                         onclick={() => (page = Math.max(1, page - 1))}>«
                 </button>
-                <button class="btn btn-sm join-item" disabled>...</button>
-                <!--{#each Array(totalPages).slice( page - 1, Math.max(1, page + 3)) as _, i}-->
-                <!--    <button-->
-                <!--            class="btn btn-sm join-item"-->
-                <!--            class:btn-active={page === i + 1}-->
-                <!--            aria-current={page === i + 1 ? 'page' : undefined}-->
-                <!--            aria-label={`Ir a la página ${i + 1}`}-->
-                <!--            onclick={() => (page = i + 1)}-->
-                <!--    >{i + 1}</button>-->
-                <!--{/each}-->
+                {#each visiblePages as pageNum}
+                    <button
+                            class="btn btn-sm join-item"
+                            class:btn-active={page === pageNum}
+                            aria-current={page === pageNum ? 'page' : undefined}
+                            aria-label={`Ir a la página ${pageNum}`}
+                            onclick={() => (page = pageNum)}
+                    >{pageNum}</button>
+                {/each}
                 <button class="btn btn-sm join-item" aria-label="Siguiente página" disabled={page === totalPages}
                         onclick={() => (page = Math.min(totalPages, page + 1))}>»
+                </button>
+                <button class="btn btn-sm join-item" aria-label="Última página" disabled={page === totalPages}
+                        onclick={() => (page = totalPages)}>»»
                 </button>
             </div>
         </nav>
