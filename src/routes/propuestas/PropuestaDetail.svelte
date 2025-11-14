@@ -12,6 +12,7 @@
         pickActDateRaw,
         pickActTimeRaw
     } from '../../utils/date'
+    import {guardedGoto} from "../../utils/authGuard";
 
     let propuestaId: string = ''
     let loading = $state(true)
@@ -132,7 +133,7 @@
                     <a
                             class="btn btn-primary btn-sm text-white"
                             href={`/propuestas/${propuestaId}/editar`}
-                            onclick={goto}
+                            onclick={(e) => guardedGoto(`/propuestas/${propuestaId}/editar`, e)}
                             aria-label="Editar propuesta"
                     >Editar</a>
                     <a class="btn btn-ghost btn-sm" href="/propuestas" onclick={goto}>Volver</a>
@@ -217,7 +218,7 @@
                             {@const ymd = toYMD(dRaw)}
                             {@const hhmm = toHHmm(tRaw)}
                             {@const st = actStatus(actividad)}
-                            <div class="card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+                            <div class="card border-2 border-primary">
                                 <div class="card-body p-4">
                                     <div class="flex items-start gap-3">
                                         <div class="flex-shrink-0 w-8 h-8 bg-primary text-primary-content rounded-full flex items-center justify-center text-sm font-semibold">

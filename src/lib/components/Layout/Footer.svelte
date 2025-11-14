@@ -3,6 +3,7 @@
     import {IdeaRoutes} from "../../../routes/ideas/routes.ts";
     import {route} from '../../../router.js'
     import {UsuarioRoutes} from "../../../routes/usuario/routes.ts";
+    import {guardedGoto} from "../../../utils/authGuard.js";
 
     const currentYear = new Date().getFullYear();
 
@@ -27,6 +28,7 @@
                 <ul class="space-y-2 text-gray-600">
                     <li><a href="/" class="text-base-content/50 link hover:underline transition-colors">Inicio</a></li>
                     <li><a href="/usuario"
+                           onclick={(e) => guardedGoto('/usuario', e)}
                            class="text-base-content/50 link hover:underline transition-colors"
                            class:active={UsuarioRoutes.includes($route.name)}
                     >Usuario</a></li>

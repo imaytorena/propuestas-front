@@ -226,7 +226,7 @@
 <div class="container mx-auto p-4">
     <section class="mb-12">
         <h2 class="font-delius mb-2 text-center text-xl font-bold text-primary">
-            Da click en alguna colonia para conocer sus áreas de oportunidad
+            Selecciona alguna categoría o da click en alguna colonia para ver más
         </h2>
         <!-- Filtro por categorías -->
         <div class="mx-auto mb-4 max-w-3xl w-full relative z-50">

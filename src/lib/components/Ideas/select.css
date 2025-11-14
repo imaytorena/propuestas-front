@@ -1,11 +1,25 @@
-.svelte-select, .svelte-select-list {
+/* Theme-aware SvelteSelect styles using DaisyUI/Tailwind CSS variables */
+.svelte-select, .svelte-select-list, .multi-item {
     color: var(--input-color) !important;
+    background-color: var(--background) !important;
+}
+.multi-item {
+    outline: var(--border) solid var(--input-color) !important;
+}
+.multi-item:hover {
+    color: var(--color-base-300) !important;
+    outline: var(--border) solid var(--color-base-300) !important;
 }
 
+.multi-item-clear * {
+    color: var(--input-color) !important;
+}
 /* Asegurar que el dropdown del select quede por encima del mapa de Leaflet */
 .svelte-select-list {
     z-index: 10000 !important;
-    position: relative;
+    position: relative;]
+    color: var(--input-color) !important;
+    border: var(--border) solid rgba(0, 0, 0, 0.2) !important;
 }
 
 .svelte-select {

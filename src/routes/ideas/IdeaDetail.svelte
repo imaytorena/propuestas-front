@@ -2,6 +2,7 @@
   import { route } from '../../router'
   import { goto } from '../../utils/nav'
   import api from '../../utils/api'
+  import {guardedGoto} from "../../utils/authGuard";
 
   let ideaId: string = ''
   let loading = $state(true)
@@ -69,7 +70,7 @@
         <a
           class="btn btn-primary btn-sm text-white"
           href={`/ideas/${ideaId}/editar`}
-          onclick={goto}
+          onclick={(e) => guardedGoto(`/ideas/${ideaId}/editar`, e)}
           aria-label="Editar idea"
         >Editar</a>
         <a class="btn btn-ghost btn-sm" href="/ideas" onclick={goto}>Volver</a>
