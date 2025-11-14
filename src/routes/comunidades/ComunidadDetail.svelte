@@ -35,25 +35,19 @@
         return []
     }
 
+    import { getPersonaNombre, getPersonaCorreo, getInicial } from '../../utils/person'
+    import { toYMD } from '../../utils/date'
+
     function miembroNombre(m: any): string {
-        const c = m?.cuenta ?? {}
-        return c?.nombre || [c?.nombre, c?.apellido].filter(Boolean).join(' ') || c?.identificador || c?.username || c?.correo || `Usuario ${m?.cuentaId ?? ''}`
+        return getPersonaNombre(m)
     }
 
     function miembroCorreo(m: any): string {
-        return m?.cuenta?.correo || m?.correo || ''
+        return getPersonaCorreo(m)
     }
 
     function miembroInicial(m: any): string {
-        const name = miembroNombre(m)
-        return (name?.trim()?.charAt(0)?.toUpperCase()) || 'U'
-    }
-
-    function toYMD(input: any): string {
-        if (!input) return ''
-        const d = new Date(input)
-        if (isNaN(d.getTime())) return ''
-        return d.toISOString().split('T')[0]
+        return getInicial(miembroNombre(m))
     }
 
     // GeoJSON features para el mapa (formato "antiguo" [[[lng,lat],...]])

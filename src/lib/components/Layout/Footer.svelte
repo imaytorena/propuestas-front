@@ -59,7 +59,7 @@
                                   clip-rule="evenodd"/>
                         </svg>
                     </a>
-                    <a href="mailto:dev@maytorena.xyz" class="text-base-content/50 hover:underline transition-colors">
+                    <a href="colectividapp@gmail.com" class="text-base-content/50 hover:underline transition-colors">
                         mailto:dev
                     </a>
                 </div>
