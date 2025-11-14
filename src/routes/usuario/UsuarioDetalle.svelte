@@ -21,6 +21,7 @@
   let usernameError = $state('')
   let usernameTimeout: number
   let originalUsername = ''
+  let showComunidadesModal = $state(false)
 
   function getInitial(text?: string | null): string {
     if (!text || typeof text !== 'string' || text.length === 0) return '?'
@@ -284,6 +285,24 @@
       </div>
     </div>
 
+    {#if me.comunidadesMiembro && me.comunidadesMiembro.length > 0}
+      <div class="mt-8">
+        <div class="card bg-base-100 shadow-lg">
+          <div class="card-body">
+            <h3 class="text-xl font-semibold mb-4">Mis comunidades</h3>
+            <div class="flex flex-wrap gap-2">
+              {#each me.comunidadesMiembro.slice(0, 6) as comunidad}
+                <a href={`/comunidades/${comunidad.comunidadId}`} class="badge badge-primary badge-lg hover:badge-primary-focus cursor-pointer">{comunidad?.comunidad?.nombre || `Comunidad ${comunidad.id}`}</a>
+              {/each}
+              {#if me.comunidadesMiembro.length > 6}
+                <button class="btn btn-sm btn-outline" onclick={() => showComunidadesModal = true}>Ver más ({me.comunidadesMiembro.length - 6})</button>
+              {/if}
+            </div>
+          </div>
+        </div>
+      </div>
+    {/if}
+
     <div class="mt-8">
       <PropuestasSuscritas
         propuestaIdsAsistire={me.propuestasAsistire || []}
@@ -292,3 +311,24 @@
     </div>
   {/if}
 </section>
+
+{#if showComunidadesModal}
+  <div class="modal modal-open">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg mb-4">Todas mis comunidades</h3>
+      <div class="space-y-2 max-h-96 overflow-y-auto">
+        {#each me.comunidadesMiembro as comunidad}
+          <a href={`/comunidades/${comunidad.comunidadId}`} class="block p-3 rounded-lg hover:bg-base-200 transition-colors">
+            <div class="font-medium">{comunidad?.comunidad?.nombre || `Comunidad ${comunidad.comunidadId}`}</div>
+            {#if comunidad?.comunidad?.descripcion}
+              <div class="text-sm text-base-content/70 mt-1">{comunidad.comunidad.descripcion}</div>
+            {/if}
+          </a>
+        {/each}
+      </div>
+      <div class="modal-action">
+        <button class="btn" onclick={() => showComunidadesModal = false}>Cerrar</button>
+      </div>
+    </div>
+  </div>
+{/if}

@@ -95,8 +95,8 @@
         loading = true
         error = null
         try {
-            const {data} = await api.get(`/comunidades?limit=6`)
-            comunidades = data ?? [];
+            const {data} = await api.get(`/comunidades?limit=9`)
+            comunidades = (data ?? []).slice(0, 6);
             totalComunidades = data.meta?.total ?? comunidades.length
             pageCountComunidades = data.meta?.pageCount ?? Math.max(1, Math.ceil(totalComunidades / pageComunidadesSize))
             sections.push({
