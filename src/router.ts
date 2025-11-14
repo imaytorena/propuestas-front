@@ -54,7 +54,7 @@ export async function initRouter() {
     page('/actividades/:actividadId/editar', (ctx: any) => setRoute('actividad-editar', ctx))
     // Comunidades
     page('/comunidades', (ctx: any) => setRoute('comunidades', ctx))
-    page('/comunidades/crear', (ctx: any) => setRoute('comunidad-crear', ctx))
+    page('/comunidades/crear', requireAuth, (ctx: any) => setRoute('comunidad-crear', ctx))
     page('/comunidades/:comunidadId', (ctx: any) => setRoute('comunidad-detalle', ctx))
     page('/comunidades/:comunidadId/editar', (ctx: any) => setRoute('comunidad-editar', ctx))
     page('/comunidades/:comunidadId/recomendar', (ctx: any) => setRoute('comunidad-recomendar', ctx))

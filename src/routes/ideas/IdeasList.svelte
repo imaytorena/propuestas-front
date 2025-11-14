@@ -85,7 +85,6 @@
                     <button class="btn join-item" aria-label="Limpiar búsqueda" onclick={() => (query = '')}>✕</button>
                 {/if}
             </div>
-            <button class="btn btn-ghost" onclick={loadIdeas} aria-label="Recargar lista">Recargar</button>
         </div>
     </header>
 

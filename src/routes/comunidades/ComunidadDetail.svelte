@@ -4,6 +4,7 @@
     import api from '../../utils/api'
     import Map from '../../lib/components/Map.svelte'
     import {toPolygonFeatureFromAny} from '../../utils/geo'
+    import { requireAuthClick } from '../../utils/authGuard'
 
     let comunidadId: string = $state('')
     let loading = $state(true)
@@ -35,25 +36,19 @@
         return []
     }
 
+    import {getPersonaNombre, getPersonaCorreo, getInicial} from '../../utils/person'
+    import {toYMD} from '../../utils/date'
+
     function miembroNombre(m: any): string {
-        const c = m?.cuenta ?? {}
-        return c?.nombre || [c?.nombre, c?.apellido].filter(Boolean).join(' ') || c?.identificador || c?.username || c?.correo || `Usuario ${m?.cuentaId ?? ''}`
+        return getPersonaNombre(m)
     }
 
     function miembroCorreo(m: any): string {
-        return m?.cuenta?.correo || m?.correo || ''
+        return getPersonaCorreo(m)
     }
 
     function miembroInicial(m: any): string {
-        const name = miembroNombre(m)
-        return (name?.trim()?.charAt(0)?.toUpperCase()) || 'U'
-    }
-
-    function toYMD(input: any): string {
-        if (!input) return ''
-        const d = new Date(input)
-        if (isNaN(d.getTime())) return ''
-        return d.toISOString().split('T')[0]
+        return getInicial(miembroNombre(m))
     }
 
     // GeoJSON features para el mapa (formato "antiguo" [[[lng,lat],...]])
@@ -186,15 +181,11 @@
             <a class="btn" href="/comunidades" onclick={goto}>Volver a la lista</a>
         </div>
     {:else}
-        <header class="mb-3 flex items-center justify-between gap-3">
-            <h1 id="comunidad-heading" class="text-2xl font-semibold tracking-tight">
+        <header class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <h1 id="comunidad-heading" class="min-w-50 text-2xl font-semibold tracking-tight">
                 {comunidad.nombre ?? `Comunidad ${comunidadId}`}
             </h1>
-            <nav class="flex items-center gap-2">
-                <a class="btn btn-primary btn-sm text-white" href={`/comunidades/${comunidadId}/recomendar`}
-                   onclick={goto}>Ver comunidades cercanas</a>
-                <a class="btn btn-ghost btn-sm" href="/comunidades" onclick={goto}>Volver</a>
-            </nav>
+            <a class="btn btn-ghost btn-sm" href="/comunidades" onclick={goto}>Volver</a>
         </header>
 
         <!-- Meta: creador y acción de unirse -->
@@ -211,14 +202,19 @@
                 </div>
             {/if}
 
-            {#if puedeUnirse}
-                <button class="btn btn-sm btn-primary text-white" onclick={joinCommunity} disabled={joining}
-                        aria-label="Unirme a esta comunidad">
-                    {joining ? 'Uniendo…' : 'Unirme a esta comunidad'}
-                </button>
-            {:else if esMiembro || esCreador}
-                <span class="badge badge-success badge-outline">{`${esMiembro ? "Miembro" : "Creador"}`}</span>
-            {/if}
+
+            <nav class="flex items-center gap-2">
+                {#if puedeUnirse}
+                    <button class="btn btn-sm btn-primary text-white" onclick={(e) => requireAuthClick(e) && joinCommunity()} disabled={joining}
+                            aria-label="Unirme a esta comunidad">
+                        {joining ? 'Uniendo…' : 'Unirme a esta comunidad'}
+                    </button>
+                {:else if esMiembro || esCreador}
+                    <span class="badge badge-success badge-outline">{`${esMiembro ? "Miembro" : "Creador"}`}</span>
+                {/if}
+                <a class="btn btn-primary btn-sm text-white" href={`/comunidades/${comunidadId}/recomendar`}
+                   onclick={goto}>Ver comunidades cercanas</a>
+            </nav>
         </div>
         {#if joinError}
             <div role="alert" class="alert alert-error mb-4" aria-live="polite"><span>{joinError}</span></div>

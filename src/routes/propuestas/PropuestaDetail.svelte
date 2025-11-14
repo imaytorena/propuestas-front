@@ -1,358 +1,337 @@
 <script lang="ts">
-  import { route } from '../../router'
-  import { goto } from '../../utils/nav'
-  import api from '../../utils/api'
+    import {route} from '../../router'
+    import {goto} from '../../utils/nav'
+    import api from '../../utils/api'
+    import {
+        toYMD,
+        toHHmm,
+        formatDateHuman,
+        todayYMD,
+        actStatus,
+        sortActsByDate,
+        pickActDateRaw,
+        pickActTimeRaw
+    } from '../../utils/date'
 
-  let propuestaId: string = ''
-  let loading = $state(true)
-  let error: string | null = $state(null)
-  let propuesta: any = $state(null)
-  let markingAttendance = $state(false)
-  let attendanceError: string | null = $state(null)
-  let showAllAttendees = $state(false)
-  let showAllInterested = $state(false)
+    let propuestaId: string = ''
+    let loading = $state(true)
+    let error: string | null = $state(null)
+    let propuesta: any = $state(null)
+    let markingAttendance = $state(false)
+    let attendanceError: string | null = $state(null)
+    let showAllAttendees = $state(false)
+    let showAllInterested = $state(false)
 
-  async function loadPropuesta() {
-    if (!propuestaId) return
-    loading = true
-    error = null
-    try {
-      const { data } = await api.get(`/propuestas/${propuestaId}`)
-      propuesta = (data as any)?.data ?? data
-    } catch (e: any) {
-      error = e?.message ?? 'Error cargando propuesta'
-    } finally {
-      loading = false
+    async function loadPropuesta() {
+        if (!propuestaId) return
+        loading = true
+        error = null
+        try {
+            const {data} = await api.get(`/propuestas/${propuestaId}`)
+            propuesta = (data as any)?.data ?? data
+        } catch (e: any) {
+            error = e?.message ?? 'Error cargando propuesta'
+        } finally {
+            loading = false
+        }
     }
-  }
 
-  async function markAttendance(estado: string) {
-    if (!propuestaId) return
-    markingAttendance = true
-    attendanceError = null
-    try {
-      if (propuesta.estatus) {
-        await api.put(`/propuestas/${propuestaId}/asistencia`, { estado })
-      } else {
-        await api.post(`/propuestas/${propuestaId}/asistencia`, { estado })
-      }
-      // Reload propuesta to get updated data
-      await loadPropuesta()
-    } catch (e: any) {
-      attendanceError = e?.message ?? 'Error marcando asistencia'
-    } finally {
-      markingAttendance = false
+    async function markAttendance(estado: string) {
+        if (!propuestaId) return
+        markingAttendance = true
+        attendanceError = null
+        try {
+            if (propuesta.estatus) {
+                await api.put(`/propuestas/${propuestaId}/asistencia`, {estado})
+            } else {
+                await api.post(`/propuestas/${propuestaId}/asistencia`, {estado})
+            }
+            // Reload propuesta to get updated data
+            await loadPropuesta()
+        } catch (e: any) {
+            attendanceError = e?.message ?? 'Error marcando asistencia'
+        } finally {
+            markingAttendance = false
+        }
     }
-  }
 
-  function getStatusText(status: string | null) {
-    switch (status) {
-      case 'ME_INTERESA': return 'Me interesa'
-      case 'ASISTIRE': return 'Asistiré'
-      case 'NO_ME_INTERESA': return 'No me interesa'
-      default: return 'Participar'
+    function getStatusText(status: string | null) {
+        switch (status) {
+            case 'ME_INTERESA':
+                return 'Me interesa'
+            case 'ASISTIRE':
+                return 'Asistiré'
+            case 'NO_ME_INTERESA':
+                return 'No me interesa'
+            default:
+                return 'Participar'
+        }
     }
-  }
 
-  // Utilities for activities: dates, time and status
-  function pickActDateRaw(a: any): any {
-    return a?.fecha ?? a?.date ?? a?.fechaActividad ?? a?.activityDate ?? null
-  }
-  function pickActTimeRaw(a: any): any {
-    return a?.horario ?? a?.hora ?? a?.time ?? a?.horaActividad ?? a?.activityTime ?? ''
-  }
-  function toYMD(input: any): string {
-    if (!input) return ''
-    const d = new Date(input)
-    if (isNaN(d.getTime())) return ''
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-  }
-  function toHHmm(input: any): string {
-    if (!input) return ''
-    const s = String(input)
-    const m = s.match(/^(\d{1,2}):(\d{2})/)
-    if (!m) return ''
-    const hh = m[1].padStart(2, '0')
-    const mm = m[2]
-    return `${hh}:${mm}`
-  }
-  function formatDateHuman(input: any): string {
-    if (!input) return 'Sin fecha'
-    const d = new Date(input)
-    if (isNaN(d.getTime())) return 'Fecha inválida'
-    try {
-      return d.toLocaleDateString('es-MX', { dateStyle: 'medium' } as any)
-    } catch {
-      // Fallback
-      return toYMD(d)
-    }
-  }
-  function todayYMD(): string {
-    const now = new Date()
-    const y = now.getFullYear()
-    const m = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
-  }
-  function actStatus(a: any): { label: string; cls: string } {
-    const raw = pickActDateRaw(a)
-    const ymd = toYMD(raw)
-    if (!ymd) return { label: 'Sin fecha', cls: 'badge-ghost' }
-    const today = todayYMD()
-    if (ymd === today) return { label: 'Hoy', cls: 'badge-warning' }
-    if (ymd > today) return { label: 'Próximamente', cls: 'badge-info' }
-    return { label: 'Finalizada', cls: 'badge-ghost' }
-  }
-  function sortActsByDate(arr: any[]): any[] {
-    return (arr ?? []).slice().sort((a: any, b: any) => {
-      const ad = toYMD(pickActDateRaw(a))
-      const bd = toYMD(pickActDateRaw(b))
-      if (!ad && !bd) return 0
-      if (!ad) return 1
-      if (!bd) return -1
-      return ad.localeCompare(bd)
+    $effect(() => {
+        const id = $route.params.propuestaId
+        if (id !== propuestaId) {
+            propuestaId = id
+            loadPropuesta()
+        }
     })
-  }
-
-  $effect(() => {
-    const id = $route.params.propuestaId
-    if (id !== propuestaId) {
-      propuestaId = id
-      loadPropuesta()
-    }
-  })
 </script>
 
 <section aria-labelledby="propuesta-heading" class="mx-auto max-w-3xl px-4 py-4 sm:py-6">
-  {#if loading}
-    <article class="card bg-base-100 shadow-sm">
-      <div class="card-body animate-pulse">
-        <div class="h-6 w-2/3 rounded bg-base-200"></div>
-        <div class="mt-3 h-4 w-full rounded bg-base-200"></div>
-        <div class="mt-1 h-4 w-5/6 rounded bg-base-200"></div>
-        <div class="mt-6 h-9 w-32 rounded bg-base-200"></div>
-      </div>
-    </article>
-  {:else if error}
-    <div role="alert" class="alert alert-error">
-      <span>{error}</span>
-      <div class="ml-auto">
-        <button class="btn btn-sm" onclick={loadPropuesta}>Reintentar</button>
-      </div>
-    </div>
-  {:else if !propuesta}
-    <div class="rounded-box border border-base-300 p-8 text-center">
-      <p class="mb-2 text-lg">Propuesta no encontrada.</p>
-      <a class="btn" href="/propuestas" onclick={goto}>Volver a la lista</a>
-    </div>
-  {:else}
-    <header class="mb-6">
-      <div class="flex items-center justify-between gap-3 mb-3">
-        <h1 id="propuesta-heading" class="text-2xl font-semibold tracking-tight">
-          {propuesta.title ?? propuesta.titulo ?? `Propuesta ${propuestaId}`}
-        </h1>
-        <nav class="flex items-center gap-2">
-          <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-success btn-sm text-white" class:loading={markingAttendance}>
-              {markingAttendance ? 'Marcando...' : (getStatusText(propuesta.estatus) || 'Participar')}
+    {#if loading}
+        <article class="card bg-base-100 shadow-sm">
+            <div class="card-body animate-pulse">
+                <div class="h-6 w-2/3 rounded bg-base-200"></div>
+                <div class="mt-3 h-4 w-full rounded bg-base-200"></div>
+                <div class="mt-1 h-4 w-5/6 rounded bg-base-200"></div>
+                <div class="mt-6 h-9 w-32 rounded bg-base-200"></div>
             </div>
-            <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
-              <li><button onclick={() => markAttendance('ME_INTERESA')} disabled={markingAttendance} class:font-bold={propuesta.estatus === 'ME_INTERESA'}>Me interesa</button></li>
-              <li><button onclick={() => markAttendance('ASISTIRE')} disabled={markingAttendance} class:font-bold={propuesta.estatus === 'ASISTIRE'}>Asistiré</button></li>
-              <li><button onclick={() => markAttendance('NO_ME_INTERESA')} disabled={markingAttendance} class:font-bold={propuesta.estatus === 'NO_ME_INTERESA'}>No me interesa</button></li>
-            </ul>
-          </div>
-          <a
-            class="btn btn-primary btn-sm text-white"
-            href={`/propuestas/${propuestaId}/editar`}
-            onclick={goto}
-            aria-label="Editar propuesta"
-          >Editar</a>
-          <a class="btn btn-ghost btn-sm" href="/propuestas" onclick={goto}>Volver</a>
-        </nav>
-      </div>
-      
-      <div class="flex flex-wrap items-center gap-4 text-sm text-base-content/70">
-        {#if propuesta.creador || propuesta.autor || propuesta.usuario}
-          {@const creador = propuesta.creador ?? propuesta.autor ?? propuesta.usuario}
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-            <span>Creado por: <span class="font-medium text-base-content">{creador.nombre ?? creador.identificador ?? creador.username ?? creador.email ?? 'Usuario'}</span></span>
-          </div>
-        {/if}
-
-        {#if propuesta.comunidad || propuesta.comunidadId || propuesta.communityId}
-          {@const c = propuesta.comunidad}
-          {@const cid = propuesta.comunidadId ?? propuesta.communityId ?? c?.id}
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
-            </svg>
-            {#if cid}
-              <a href={`/comunidades/${cid}`} onclick={goto} class="link link-primary">{c?.nombre ?? `Comunidad ${cid}`}</a>
-            {:else}
-              <span>Comunidad: <span class="font-medium text-base-content">{c?.nombre ?? '—'}</span></span>
-            {/if}
-          </div>
-        {/if}
-
-        {#if propuesta.createdAt || propuesta.fechaCreacion || propuesta.created_at}
-          {@const created = propuesta.createdAt ?? propuesta.fechaCreacion ?? propuesta.created_at}
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-            </svg>
-            <span>Creada: <span class="font-medium text-base-content">{new Date(created).toLocaleDateString('es-MX')}</span></span>
-          </div>
-        {/if}
-      </div>
-    </header>
-
-    {#if attendanceError}
-      <div role="alert" class="alert alert-error mb-4" aria-live="polite">
-        <span>{attendanceError}</span>
-      </div>
-    {/if}
-
-    <article class="prose max-w-none mb-6">
-      {#if (propuesta.description ?? propuesta.descripcion)}
-        <p class="break-all whitespace-pre-wrap">{propuesta.description ?? propuesta.descripcion}</p>
-      {:else}
-        <p class="text-base-content/70">Sin descripción.</p>
-      {/if}
-    </article>
-
-    {#if propuesta.actividades}
-      {@const acts = Array.isArray(propuesta.actividades) ? propuesta.actividades : Object.values(propuesta.actividades ?? {})}
-      {#if acts.length > 0}
-        <details class="mt-8" open>
-          <summary class="text-xl font-semibold mb-4 flex items-center gap-2 cursor-pointer select-none">
-            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-            </svg>
-            Actividades a realizar ({acts.length})
-          </summary>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {#each sortActsByDate(acts) as actividad, index}
-              {@const dRaw = pickActDateRaw(actividad)}
-              {@const tRaw = pickActTimeRaw(actividad)}
-              {@const ymd = toYMD(dRaw)}
-              {@const hhmm = toHHmm(tRaw)}
-              {@const st = actStatus(actividad)}
-              <div class="card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
-                <div class="card-body p-4">
-                  <div class="flex items-start gap-3">
-                    <div class="flex-shrink-0 w-8 h-8 bg-primary text-primary-content rounded-full flex items-center justify-center text-sm font-semibold">
-                      {index + 1}
+        </article>
+    {:else if error}
+        <div role="alert" class="alert alert-error">
+            <span>{error}</span>
+            <div class="ml-auto">
+                <button class="btn btn-sm" onclick={loadPropuesta}>Reintentar</button>
+            </div>
+        </div>
+    {:else if !propuesta}
+        <div class="rounded-box border border-base-300 p-8 text-center">
+            <p class="mb-2 text-lg">Propuesta no encontrada.</p>
+            <a class="btn" href="/propuestas" onclick={goto}>Volver a la lista</a>
+        </div>
+    {:else}
+        <header class="mb-6">
+            <div class="flex items-center justify-between gap-3 mb-3">
+                <h1 id="propuesta-heading" class="text-2xl font-semibold tracking-tight">
+                    {propuesta.title ?? propuesta.titulo ?? `Propuesta ${propuestaId}`}
+                </h1>
+                <nav class="flex items-center gap-2">
+                    <div class="dropdown dropdown-end">
+                        <div tabindex="0" role="button" class="btn btn-success btn-sm text-white"
+                             class:loading={markingAttendance}>
+                            {markingAttendance ? 'Marcando...' : (getStatusText(propuesta.estatus) || 'Participar')}
+                        </div>
+                        <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+                            <li>
+                                <button onclick={() => markAttendance('ME_INTERESA')} disabled={markingAttendance}
+                                        class:font-bold={propuesta.estatus === 'ME_INTERESA'}>Me interesa
+                                </button>
+                            </li>
+                            <li>
+                                <button onclick={() => markAttendance('ASISTIRE')} disabled={markingAttendance}
+                                        class:font-bold={propuesta.estatus === 'ASISTIRE'}>Asistiré
+                                </button>
+                            </li>
+                            <li>
+                                <button onclick={() => markAttendance('NO_ME_INTERESA')} disabled={markingAttendance}
+                                        class:font-bold={propuesta.estatus === 'NO_ME_INTERESA'}>No me interesa
+                                </button>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between gap-2 mb-1">
-                        <h3 class="font-semibold text-lg text-primary break-all">{actividad.nombre ?? actividad.title}</h3>
-                        <span class={`badge badge-sm ${st.cls}`}>{st.label}</span>
-                      </div>
-                      <div class="flex items-center gap-2 text-sm text-base-content/70 mb-2">
-                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    <a
+                            class="btn btn-primary btn-sm text-white"
+                            href={`/propuestas/${propuestaId}/editar`}
+                            onclick={goto}
+                            aria-label="Editar propuesta"
+                    >Editar</a>
+                    <a class="btn btn-ghost btn-sm" href="/propuestas" onclick={goto}>Volver</a>
+                </nav>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-4 text-sm text-base-content/70">
+                {#if propuesta.creador || propuesta.autor || propuesta.usuario}
+                    {@const creador = propuesta.creador ?? propuesta.autor ?? propuesta.usuario}
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                         </svg>
-                        <span>
-                          {ymd ? formatDateHuman(dRaw) : 'Sin fecha'}{#if hhmm} · {hhmm}{/if}
+                        <span>Creado por: <span
+                                class="font-medium text-base-content">{creador.nombre ?? creador.identificador ?? creador.username ?? creador.email ?? 'Usuario'}</span></span>
+                    </div>
+                {/if}
+
+                {#if propuesta.comunidad || propuesta.comunidadId || propuesta.communityId}
+                    {@const c = propuesta.comunidad}
+                    {@const cid = propuesta.comunidadId ?? propuesta.communityId ?? c?.id}
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+                        </svg>
+                        {#if cid}
+                            <a href={`/comunidades/${cid}`} onclick={goto}
+                               class="link link-primary">{c?.nombre ?? `Comunidad ${cid}`}</a>
+                        {:else}
+                            <span>Comunidad: <span
+                                    class="font-medium text-base-content">{c?.nombre ?? '—'}</span></span>
+                        {/if}
+                    </div>
+                {/if}
+
+                {#if propuesta.createdAt || propuesta.fechaCreacion || propuesta.created_at}
+                    {@const created = propuesta.createdAt ?? propuesta.fechaCreacion ?? propuesta.created_at}
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span>Creada: <span
+                                class="font-medium text-base-content">{new Date(created).toLocaleDateString('es-MX')}</span></span>
+                    </div>
+                {/if}
+            </div>
+        </header>
+
+        {#if attendanceError}
+            <div role="alert" class="alert alert-error mb-4" aria-live="polite">
+                <span>{attendanceError}</span>
+            </div>
+        {/if}
+
+        <article class="prose max-w-none mb-6">
+            {#if (propuesta.description ?? propuesta.descripcion)}
+                <p class="break-all whitespace-pre-wrap">{propuesta.description ?? propuesta.descripcion}</p>
+            {:else}
+                <p class="text-base-content/70">Sin descripción.</p>
+            {/if}
+        </article>
+
+        {#if propuesta.actividades}
+            {@const
+                acts = Array.isArray(propuesta.actividades) ? propuesta.actividades : Object.values(propuesta.actividades ?? {})}
+            {#if acts.length > 0}
+                <details class="mt-8" open>
+                    <summary class="text-xl font-semibold mb-4 flex items-center gap-2 cursor-pointer select-none">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                        </svg>
+                        Actividades a realizar ({acts.length})
+                    </summary>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {#each sortActsByDate(acts) as actividad, index}
+                            {@const dRaw = pickActDateRaw(actividad)}
+                            {@const tRaw = pickActTimeRaw(actividad)}
+                            {@const ymd = toYMD(dRaw)}
+                            {@const hhmm = toHHmm(tRaw)}
+                            {@const st = actStatus(actividad)}
+                            <div class="card bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20">
+                                <div class="card-body p-4">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-primary text-primary-content rounded-full flex items-center justify-center text-sm font-semibold">
+                                            {index + 1}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between gap-2 mb-1">
+                                                <h3 class="font-semibold text-lg text-primary break-all">{actividad.nombre ?? actividad.title}</h3>
+                                                <span class={`badge badge-sm ${st.cls}`}>{st.label}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-sm text-base-content/70 mb-2">
+                                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor"
+                                                     viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                          stroke-width="2"
+                                                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                </svg>
+                                                <span>
+                          {ymd ? formatDateHuman(dRaw) : 'Sin fecha'}
+                                                    {#if hhmm} · {hhmm}{/if}
                         </span>
-                      </div>
-                      <p class="text-base-content/80 leading-relaxed break-all whitespace-pre-wrap">{actividad.descripcion ?? actividad.description}</p>
+                                            </div>
+                                            <p class="text-base-content/80 leading-relaxed break-all whitespace-pre-wrap">{actividad.descripcion ?? actividad.description}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {/each}
                     </div>
-                  </div>
-                </div>
-              </div>
-            {/each}
-          </div>
-        </details>
-      {/if}
-    {/if}
-
-    {#if propuesta.asistentes && propuesta.asistentes.length > 0}
-      {@const asistentes = propuesta.asistentes.filter(a => a.estado === 'ASISTIRE')}
-      {@const interesados = propuesta.asistentes.filter(a => a.estado === 'ME_INTERESA')}
-      
-      <div class="mt-8 space-y-8">
-        <!-- Asistentes confirmados -->
-        {#if asistentes.length > 0}
-          <details>
-            <summary class="text-xl font-semibold mb-4 flex items-center gap-2 cursor-pointer select-none">
-              <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              Asistentes confirmados ({asistentes.length})
-            </summary>
-            <div class="space-y-3">
-              {#each (showAllAttendees ? asistentes : asistentes.slice(0, 5)) as asistente}
-                <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-success/20">
-                  <div class="flex items-start gap-3">
-                    <div class="flex-shrink-0 w-8 h-8 bg-success text-success-content rounded-full flex items-center justify-center text-sm font-semibold">
-                      {asistente.cuenta?.identificador?.charAt(0)?.toUpperCase() || 'U'}
-                    </div>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="font-medium break-all">{asistente.cuenta?.identificador || 'Usuario'}</p>
-                    <p class="text-sm text-base-content/70 break-all">{asistente.cuenta?.correo || 'Sin email'}</p>
-                  </div>
-                  <span class="badge badge-success badge-sm">Asistirá</span>
-                </div>
-              {/each}
-              {#if asistentes.length > 5 && !showAllAttendees}
-                <button class="btn btn-outline btn-sm" onclick={() => showAllAttendees = true}>
-                  Ver más ({asistentes.length - 5} más)
-                </button>
-              {:else if showAllAttendees && asistentes.length > 5}
-                <button class="btn btn-outline btn-sm" onclick={() => showAllAttendees = false}>
-                  Ver menos
-                </button>
-              {/if}
-            </div>
-          </details>
+                </details>
+            {/if}
         {/if}
 
-        <!-- Interesados -->
-        {#if interesados.length > 0}
-          <details>
-            <summary class="text-xl font-semibold mb-4 flex items-center gap-2 cursor-pointer select-none">
-              <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-              </svg>
-              Interesados ({interesados.length})
-            </summary>
-            <div class="space-y-3">
-              {#each (showAllInterested ? interesados : interesados.slice(0, 5)) as interesado}
-                <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-info/20">
-                  <div class="flex items-start gap-3">
-                    <div class="flex-shrink-0 w-8 h-8 bg-info text-info-content rounded-full flex items-center justify-center text-sm font-semibold">
-                      {interesado.cuenta?.identificador?.charAt(0)?.toUpperCase() || 'U'}
-                    </div>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="font-medium break-all">{interesado.cuenta?.identificador || 'Usuario'}</p>
-                    <p class="text-sm text-base-content/70 break-all">{interesado.cuenta?.correo || 'Sin email'}</p>
-                  </div>
-                  <span class="badge badge-info badge-sm">Le interesa</span>
-                </div>
-              {/each}
-              {#if interesados.length > 5 && !showAllInterested}
-                <button class="btn btn-outline btn-sm" onclick={() => showAllInterested = true}>
-                  Ver más ({interesados.length - 5} más)
-                </button>
-              {:else if showAllInterested && interesados.length > 5}
-                <button class="btn btn-outline btn-sm" onclick={() => showAllInterested = false}>
-                  Ver menos
-                </button>
-              {/if}
+        {#if propuesta.asistentes && propuesta.asistentes.length > 0}
+            {@const asistentes = propuesta.asistentes.filter(a => a.estado === 'ASISTIRE')}
+            {@const interesados = propuesta.asistentes.filter(a => a.estado === 'ME_INTERESA')}
+
+            <div class="mt-8 space-y-8">
+                <!-- Asistentes confirmados -->
+                {#if asistentes.length > 0}
+                    <details>
+                        <summary class="text-xl font-semibold mb-4 flex items-center gap-2 cursor-pointer select-none">
+                            <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Asistentes confirmados ({asistentes.length})
+                        </summary>
+                        <div class="space-y-3">
+                            {#each (showAllAttendees ? asistentes : asistentes.slice(0, 5)) as asistente}
+                                <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-success/20">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-success text-success-content rounded-full flex items-center justify-center text-sm font-semibold">
+                                            {asistente.cuenta?.identificador?.charAt(0)?.toUpperCase() || 'U'}
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium break-all">{asistente.cuenta?.identificador || 'Usuario'}</p>
+                                        <p class="text-sm text-base-content/70 break-all">{asistente.cuenta?.correo || 'Sin email'}</p>
+                                    </div>
+                                    <span class="badge badge-success badge-sm">Asistirá</span>
+                                </div>
+                            {/each}
+                            {#if asistentes.length > 5 && !showAllAttendees}
+                                <button class="btn btn-outline btn-sm" onclick={() => showAllAttendees = true}>
+                                    Ver más ({asistentes.length - 5} más)
+                                </button>
+                            {:else if showAllAttendees && asistentes.length > 5}
+                                <button class="btn btn-outline btn-sm" onclick={() => showAllAttendees = false}>
+                                    Ver menos
+                                </button>
+                            {/if}
+                        </div>
+                    </details>
+                {/if}
+
+                <!-- Interesados -->
+                {#if interesados.length > 0}
+                    <details>
+                        <summary class="text-xl font-semibold mb-4 flex items-center gap-2 cursor-pointer select-none">
+                            <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            </svg>
+                            Interesados ({interesados.length})
+                        </summary>
+                        <div class="space-y-3">
+                            {#each (showAllInterested ? interesados : interesados.slice(0, 5)) as interesado}
+                                <div class="flex items-center gap-3 p-3 bg-base-100 rounded-lg border border-info/20">
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex-shrink-0 w-8 h-8 bg-info text-info-content rounded-full flex items-center justify-center text-sm font-semibold">
+                                            {interesado.cuenta?.identificador?.charAt(0)?.toUpperCase() || 'U'}
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium break-all">{interesado.cuenta?.identificador || 'Usuario'}</p>
+                                        <p class="text-sm text-base-content/70 break-all">{interesado.cuenta?.correo || 'Sin email'}</p>
+                                    </div>
+                                    <span class="badge badge-info badge-sm">Le interesa</span>
+                                </div>
+                            {/each}
+                            {#if interesados.length > 5 && !showAllInterested}
+                                <button class="btn btn-outline btn-sm" onclick={() => showAllInterested = true}>
+                                    Ver más ({interesados.length - 5} más)
+                                </button>
+                            {:else if showAllInterested && interesados.length > 5}
+                                <button class="btn btn-outline btn-sm" onclick={() => showAllInterested = false}>
+                                    Ver menos
+                                </button>
+                            {/if}
+                        </div>
+                    </details>
+                {/if}
             </div>
-          </details>
         {/if}
-      </div>
     {/if}
-  {/if}
 </section>

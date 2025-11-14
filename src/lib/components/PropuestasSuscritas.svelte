@@ -1,157 +1,122 @@
 <script lang="ts">
-  import { goto } from '../../utils/nav'
+    import SectionHeader from './common/SectionHeader.svelte'
+    import PropuestaCardCompact from './Propuestas/PropuestaCardCompact.svelte'
+    import {groupByDate, pickActDateRaw} from '../../utils/date'
 
-  interface Props {
-    propuestaIdsAsistire?: any[]
-    propuestasInteres?: any[]
-  }
+    interface Props {
+        propuestaIdsAsistire?: any[]
+        propuestasInteres?: any[]
+    }
 
-  let { propuestaIdsAsistire = [], propuestasInteres = [] }: Props = $props()
+    let {propuestaIdsAsistire = [], propuestasInteres = []}: Props = $props()
 
-  function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
+    let asistire = $derived(propuestaIdsAsistire)
+    let interesados = $derived(propuestasInteres)
 
-  function groupByDate(propuestas: any[]) {
-    if (!propuestas || propuestas.length === 0) return []
-    
-    const grouped = propuestas.reduce((acc, propuesta) => {
-      const date = propuesta.createdAt?.split('T')[0] || 'Sin fecha'
-      if (!acc[date]) {
-        acc[date] = []
-      }
-      acc[date].push(propuesta)
-      return acc
-    }, {})
-    
-    return Object.entries(grouped).sort(([a], [b]) => {
-      if (a === 'Sin fecha') return 1
-      if (b === 'Sin fecha') return -1
-      return new Date(a).getTime() - new Date(b).getTime()
-    })
-  }
-
-  let asistire = $derived(propuestaIdsAsistire || [])
-  let interesados = $derived(propuestasInteres || [])
-
-
+    const agrupar = (arr: any[]) => groupByDate(arr, pickActDateRaw)
 </script>
 
 <div class="space-y-8">
-  <!-- Propuestas a las que asistiré -->
-  <section class="space-y-6">
-    <header>
-      <h2 class="text-xl font-semibold mb-2 flex items-center gap-2">
-        <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        Propuestas a las que asistiré ({asistire.length})
-      </h2>
-    </header>
+    <!-- Propuestas a las que asistiré -->
+    <section class="space-y-6">
+        <SectionHeader titulo="Propuestas a las que asistiré" contador={asistire.length} accent="success">
+            <svelte:fragment slot="icon">
+                <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </svelte:fragment>
+            {#key asistire}
+                {@const contador = asistire.length}
+            {/key}
+        </SectionHeader>
 
-    {#if asistire.length === 0}
-      <div class="text-center py-4 text-base-content/70">
-        <p>No tienes propuestas confirmadas</p>
-      </div>
-    {:else}
-      <div class="space-y-6">
-        {#each groupByDate(asistire) as [fecha, propuestasPorFecha]}
-          <div class="space-y-3">
-            <div class="space-y-2">
-              {#each propuestasPorFecha as propuesta}
-                <div class="card bg-base-100 border border-success/20 hover:shadow-md transition-shadow">
-                  <div class="card-body p-4">
-                    <div class="flex items-center justify-between">
-                      <div class="flex-1">
-                        <h4 class="font-semibold text-base mb-1">
-                          {propuesta.titulo ?? propuesta.title ?? `Propuesta ${propuesta.id}`}
-                        </h4>
-                        <p class="text-sm text-base-content/70 mb-2">{propuesta.descripcion ?? propuesta.description ?? ''}</p>
-                        <div class="flex items-center gap-4 text-sm text-base-content/70">
-                          <span class="flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            {formatDate(propuesta.createdAt)}
-                          </span>
-                          <span class="badge badge-success badge-sm">Asistiré</span>
-                        </div>
-                      </div>
-                      <button
-                        class="btn btn-success btn-sm"
-                        onclick={() => window.location.href = `/propuestas/${propuesta.id}`}
-                      >
-                        Ver detalles
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              {/each}
+        {#if asistire.length === 0}
+            <div class="text-center py-4 text-base-content/70">
+                <p>No tienes propuestas confirmadas</p>
             </div>
-          </div>
-        {/each}
-      </div>
-    {/if}
-  </section>
-
-  <!-- Propuestas que me interesan -->
-  <section class="space-y-6">
-    <header>
-      <h2 class="text-xl font-semibold mb-2 flex items-center gap-2">
-        <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-        </svg>
-        Propuestas que me interesan ({interesados.length})
-      </h2>
-    </header>
-
-    {#if interesados.length === 0}
-      <div class="text-center py-4 text-base-content/70">
-        <p>No tienes propuestas marcadas como interesantes</p>
-      </div>
-    {:else}
-      <div class="space-y-6">
-        {#each groupByDate(interesados) as [fecha, propuestasPorFecha]}
-          <div class="space-y-3">
-            <div class="space-y-2">
-              {#each propuestasPorFecha as propuesta}
-                <div class="card bg-base-100 border border-info/20 hover:shadow-md transition-shadow">
-                  <div class="card-body p-4">
-                    <div class="flex items-center justify-between">
-                      <div class="flex-1">
-                        <h4 class="font-semibold text-base mb-1">
-                          {propuesta.titulo ?? propuesta.title ?? `Propuesta ${propuesta.id}`}
-                        </h4>
-                        <p class="text-sm text-base-content/70 mb-2">{propuesta.descripcion ?? propuesta.description ?? ''}</p>
-                        <div class="flex items-center gap-4 text-sm text-base-content/70">
-                          <span class="flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            {formatDate(propuesta.createdAt)}
-                          </span>
-                          <span class="badge badge-info badge-sm">Me interesa</span>
-                        </div>
-                      </div>
-                      <button 
-                        class="btn btn-info btn-sm"
-                        onclick={() => window.location.href = `/propuestas/${propuesta.id}`}
-                      >
-                        Ver detalles
-                      </button>
-                    </div>
-                  </div>
+        {:else}
+            {#if agrupar(asistire).length === 0}
+                <!-- Si no hay fechas válidas, mostrar lista plana -->
+                <div class="space-y-2">
+                    {#each asistire as p}
+                        <PropuestaCardCompact
+                                id={p?.id ?? p}
+                                titulo={p?.titulo ?? `Propuesta ${p?.id ?? p}`}
+                                etiqueta="Asistiré"
+                                variante="success"
+                                accent="success"
+                        />
+                    {/each}
                 </div>
-              {/each}
+            {:else}
+                <div class="space-y-6">
+                    {#each agrupar(asistire) as [fecha, propuestasPorFecha]}
+                        <div class="space-y-2">
+                            {#each propuestasPorFecha as p}
+                            <PropuestaCardCompact
+                                    id={p?.id ?? p}
+                                    titulo={p?.titulo ?? `Propuesta ${p?.id ?? p}`}
+                                    etiqueta="Asistiré"
+                                    variante="success"
+                                    accent="success"
+                            />
+                        {/each}
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+        {/if}
+    </section>
+
+    <!-- Propuestas que me interesan -->
+    <section class="space-y-6">
+        <SectionHeader titulo="Propuestas que me interesan" contador={interesados.length} accent="info">
+            <svelte:fragment slot="icon">
+                <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+            </svelte:fragment>
+            {#key interesados}
+                {@const contador = interesados.length}
+            {/key}
+        </SectionHeader>
+
+        {#if interesados.length === 0}
+            <div class="text-center py-4 text-base-content/70">
+                <p>No tienes propuestas marcadas como interesantes</p>
             </div>
-          </div>
-        {/each}
-      </div>
-    {/if}
-  </section>
+        {:else}
+            {#if agrupar(interesados).length === 0}
+                <div class="space-y-2">
+                    {#each interesados as p}
+                        <PropuestaCardCompact
+                                id={p?.id ?? p}
+                                titulo={p?.titulo ?? `Propuesta ${p?.id ?? p}`}
+                                etiqueta="Me interesa"
+                                variante="info"
+                                accent="info"
+                        />
+                    {/each}
+                </div>
+            {:else}
+                <div class="space-y-6">
+                    {#each agrupar(interesados) as [fecha, propuestasPorFecha]}
+                        <div class="space-y-2">
+                            {#each propuestasPorFecha as p}
+                                <PropuestaCardCompact
+                                        id={p?.id ?? p}
+                                        titulo={p?.titulo ?? `Propuesta ${p?.id ?? p}`}
+                                        etiqueta="Me interesa"
+                                        variante="info"
+                                        accent="info"
+                                />
+                            {/each}
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+        {/if}
+    </section>
 </div>

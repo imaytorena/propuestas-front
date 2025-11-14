@@ -145,7 +145,7 @@
   {:else if me}
     <div class="card bg-base-100 shadow-lg">
       <div class="card-body">
-        <div class="flex items-start justify-between mb-6">
+        <div class="flex flex-wrap items-start justify-between gap-4">
           <div class="flex items-center gap-4">
             <div class="w-16 h-16 rounded-full bg-primary text-primary-content flex items-center justify-center text-2xl font-bold">
               {getInitial(me.identificador || me.correo)}
