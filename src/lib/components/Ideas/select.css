@@ -7,7 +7,6 @@
     outline: var(--border) solid var(--input-color) !important;
 }
 .multi-item:hover {
-    color: var(--color-base-300) !important;
     outline: var(--border) solid var(--color-base-300) !important;
 }
 
