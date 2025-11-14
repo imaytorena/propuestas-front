@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '../../utils/nav'
   import api from '../../utils/api'
+  import { guardedGoto } from '../../utils/authGuard'
 
   type Propuesta = {
     id: number | string
@@ -81,7 +82,7 @@
           <button class="btn join-item" aria-label="Limpiar búsqueda" onclick={() => (query = '')}>✕</button>
         {/if}
       </div>
-      <a class="btn btn-primary text-white" href="/propuestas/crear" onclick={goto}>Nueva propuesta</a>
+      <a class="btn btn-primary text-white" href="/propuestas/crear" onclick={(e) => guardedGoto('/propuestas/crear', e)}>Nueva propuesta</a>
     </div>
   </header>
 

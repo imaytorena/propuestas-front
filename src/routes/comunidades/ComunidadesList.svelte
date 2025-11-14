@@ -1,6 +1,7 @@
 <script lang="ts">
     import {goto} from '../../utils/nav'
     import api from '../../utils/api'
+    import { guardedGoto } from '../../utils/authGuard'
 
     type Comunidad = {
         id: number | string
@@ -92,7 +93,7 @@
                     <button class="btn join-item" aria-label="Limpiar búsqueda" onclick={() => (query = '')}>✕</button>
                 {/if}
             </div>
-            <a class="btn btn-primary text-white" href="/comunidades/crear" onclick={goto}>Nueva comunidad</a>
+            <a class="btn btn-primary text-white" href="/comunidades/crear" onclick={(e) => guardedGoto('/comunidades/crear', e)}>Nueva comunidad</a>
         </div>
     </header>
 

@@ -4,6 +4,7 @@
     import api from '../../utils/api'
     import Map from '../../lib/components/Map.svelte'
     import {toPolygonFeatureFromAny} from '../../utils/geo'
+    import { requireAuthClick } from '../../utils/authGuard'
 
     let comunidadId: string = $state('')
     let loading = $state(true)
@@ -204,7 +205,7 @@
 
             <nav class="flex items-center gap-2">
                 {#if puedeUnirse}
-                    <button class="btn btn-sm btn-primary text-white" onclick={joinCommunity} disabled={joining}
+                    <button class="btn btn-sm btn-primary text-white" onclick={(e) => requireAuthClick(e) && joinCommunity()} disabled={joining}
                             aria-label="Unirme a esta comunidad">
                         {joining ? 'Uniendo…' : 'Unirme a esta comunidad'}
                     </button>
