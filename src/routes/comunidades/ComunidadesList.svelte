@@ -93,7 +93,6 @@
                 {/if}
             </div>
             <a class="btn btn-primary text-white" href="/comunidades/crear" onclick={goto}>Nueva comunidad</a>
-            <button class="btn btn-ghost" onclick={loadComunidades} aria-label="Recargar lista">Recargar</button>
         </div>
     </header>
 

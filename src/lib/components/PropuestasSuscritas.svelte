@@ -1,7 +1,7 @@
 <script lang="ts">
     import SectionHeader from './common/SectionHeader.svelte'
     import PropuestaCardCompact from './Propuestas/PropuestaCardCompact.svelte'
-    import {groupByDate} from '../../utils/date'
+    import {groupByDate, pickActDateRaw} from '../../utils/date'
 
     interface Props {
         propuestaIdsAsistire?: any[]
@@ -13,7 +13,7 @@
     let asistire = $derived(propuestaIdsAsistire)
     let interesados = $derived(propuestasInteres)
 
-    const agrupar = (arr: any[]) => groupByDate(arr, (p: any) => p?.fechaActividad)
+    const agrupar = (arr: any[]) => groupByDate(arr, pickActDateRaw)
 </script>
 
 <div class="space-y-8">
@@ -36,22 +36,36 @@
                 <p>No tienes propuestas confirmadas</p>
             </div>
         {:else}
-            <div class="space-y-6">
-                {#each agrupar(asistire) as [fecha, propuestasPorFecha]}
-                    <div class="space-y-2">
-                        {#each propuestasPorFecha as p}
+            {#if agrupar(asistire).length === 0}
+                <!-- Si no hay fechas válidas, mostrar lista plana -->
+                <div class="space-y-2">
+                    {#each asistire as p}
+                        <PropuestaCardCompact
+                                id={p?.id ?? p}
+                                titulo={p?.titulo ?? `Propuesta ${p?.id ?? p}`}
+                                etiqueta="Asistiré"
+                                variante="success"
+                                accent="success"
+                        />
+                    {/each}
+                </div>
+            {:else}
+                <div class="space-y-6">
+                    {#each agrupar(asistire) as [fecha, propuestasPorFecha]}
+                        <div class="space-y-2">
+                            {#each propuestasPorFecha as p}
                             <PropuestaCardCompact
-                                    id={p.id}
-                                    titulo={p.title ?? p.titulo ?? `Propuesta ${p.id}`}
-                                    hora={p.horaActividad}
+                                    id={p?.id ?? p}
+                                    titulo={p?.titulo ?? `Propuesta ${p?.id ?? p}`}
                                     etiqueta="Asistiré"
                                     variante="success"
                                     accent="success"
                             />
                         {/each}
-                    </div>
-                {/each}
-            </div>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
         {/if}
     </section>
 
@@ -74,22 +88,35 @@
                 <p>No tienes propuestas marcadas como interesantes</p>
             </div>
         {:else}
-            <div class="space-y-6">
-                {#each agrupar(interesados) as [fecha, propuestasPorFecha]}
-                    <div class="space-y-2">
-                        {#each propuestasPorFecha as p}
-                            <PropuestaCardCompact
-                                    id={p.id}
-                                    titulo={p.title ?? p.titulo ?? `Propuesta ${p.id}`}
-                                    hora={p.horaActividad}
-                                    etiqueta="Me interesa"
-                                    variante="info"
-                                    accent="info"
-                            />
-                        {/each}
-                    </div>
-                {/each}
-            </div>
+            {#if agrupar(interesados).length === 0}
+                <div class="space-y-2">
+                    {#each interesados as p}
+                        <PropuestaCardCompact
+                                id={p?.id ?? p}
+                                titulo={p?.titulo ?? `Propuesta ${p?.id ?? p}`}
+                                etiqueta="Me interesa"
+                                variante="info"
+                                accent="info"
+                        />
+                    {/each}
+                </div>
+            {:else}
+                <div class="space-y-6">
+                    {#each agrupar(interesados) as [fecha, propuestasPorFecha]}
+                        <div class="space-y-2">
+                            {#each propuestasPorFecha as p}
+                                <PropuestaCardCompact
+                                        id={p?.id ?? p}
+                                        titulo={p?.titulo ?? `Propuesta ${p?.id ?? p}`}
+                                        etiqueta="Me interesa"
+                                        variante="info"
+                                        accent="info"
+                                />
+                            {/each}
+                        </div>
+                    {/each}
+                </div>
+            {/if}
         {/if}
     </section>
 </div>

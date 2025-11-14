@@ -82,7 +82,6 @@
         {/if}
       </div>
       <a class="btn btn-primary text-white" href="/propuestas/crear" onclick={goto}>Nueva propuesta</a>
-      <button class="btn btn-ghost" onclick={loadPropuestas} aria-label="Recargar lista">Recargar</button>
     </div>
   </header>
 
