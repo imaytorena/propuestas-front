@@ -1,6 +1,7 @@
 <script lang="ts">
     // Cada actividad ahorario incluye fecha (obligatoria) y horario (opcional)
-    export let actividades: Array<{ nombre: string, descripcion: string, fecha: string, horario?: string }> = []
+    export let actividades: Array<{ id?: number, nombre: string, descripcion: string, fecha: string, horario?: string }> = []
+    export let onActividadEliminada: ((id: number) => void) | undefined = undefined
 
     const today = new Date().toISOString().split('T')[0]
 
@@ -9,6 +10,10 @@
     }
 
     function eliminarActividad(index: number) {
+        const actividad = actividades[index]
+        if (actividad?.id && onActividadEliminada) {
+            onActividadEliminada(actividad.id)
+        }
         actividades = actividades.filter((_, i) => i !== index)
     }
 </script>
